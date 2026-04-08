@@ -1,47 +1,48 @@
 import { Link } from '@inertiajs/react'
 import Layout from '../components/Layout'
+import { BookOpen, ShieldCheck, Wrench, User, Award, HandHeart, Gift, Heart, Clock, ClipboardList, GraduationCap } from 'lucide-react'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const programmes = [
   {
     id: 1,
-    icon: '📖',
+    icon: <BookOpen className="w-7 h-7" strokeWidth={1.5} />,
     title: 'Essentielle de la doctrine chrétienne',
     description: 'Affermir les disciples dans la foi et les fondamentaux de la Parole de Dieu pour une fondation solide.',
     badge: 'Base',
   },
   {
     id: 2,
-    icon: '🪞',
+    icon: <User className="w-7 h-7" strokeWidth={1.5} />,
     title: 'Face à moi-même',
     description: 'Un parcours d\'introspection pour laisser le Saint-Esprit transformer le caractère et l\'intelligence.',
     badge: '',
   },
   {
     id: 3,
-    icon: '👑',
+    icon: <Award className="w-7 h-7" strokeWidth={1.5} />,
     title: 'Leadership biblique',
     description: 'Développer le leadership chrétien et se préparer à servir efficacement dans l\'œuvre du Seigneur.',
     badge: 'Avancé',
   },
   {
     id: 4,
-    icon: '🤲',
+    icon: <HandHeart className="w-7 h-7" strokeWidth={1.5} />,
     title: 'Doulos',
     description: 'Apprendre le service, l\'humilité et l\'obéissance à l\'image de Christ, le serviteur par excellence.',
     badge: '',
   },
   {
     id: 5,
-    icon: '🎁',
+    icon: <Gift className="w-7 h-7" strokeWidth={1.5} />,
     title: 'Connaître ses dons',
     description: 'Découvrir et activer vos dons spirituels pour l\'édification du corps de Christ.',
     badge: '',
   },
   {
     id: 6,
-    icon: '🙏',
+    icon: <Heart className="w-7 h-7" strokeWidth={1.5} />,
     title: 'Connaître et pratique la prière',
     description: 'Une immersion dans la vie de prière efficace pour des ouvriers fidèles et puissants.',
     badge: 'Essentiel',
@@ -49,10 +50,10 @@ const programmes = [
 ]
 
 const infosPratiques = [
-  { value: '4', label: 'Vacations disponibles (Matin, Midi, Soir, Samedi)', icon: '⏰' },
-  { value: '3', label: 'Absences tolérées avant sanction', icon: '📋' },
-  { value: '100%', label: 'Soumission aux valeurs de l\'école', icon: '✝️' },
-  { value: 'Diplôme', label: 'Remis à la fin de la formation', icon: '🎓' },
+  { value: '4', label: 'Vacations disponibles (Matin, Midi, Soir, Samedi)', icon: <Clock className="w-10 h-10 mx-auto text-orange" strokeWidth={1.5} /> },
+  { value: '3', label: 'Absences tolérées avant sanction', icon: <ClipboardList className="w-10 h-10 mx-auto text-orange" strokeWidth={1.5} /> },
+  { value: '100%', label: 'Soumission aux valeurs de l\'école', icon: <ShieldCheck className="w-10 h-10 mx-auto text-orange" strokeWidth={1.5} /> },
+  { value: 'Diplôme', label: 'Remis à la fin de la formation', icon: <GraduationCap className="w-10 h-10 mx-auto text-orange" strokeWidth={1.5} /> },
 ]
 
 const temoignages = [
@@ -85,27 +86,21 @@ const temoignages = [
 const pointsCles = [
   {
     icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" fill="currentColor" stroke="none" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v2h-2v-2zm0-10h2v8h-2V7z" />
-      </svg>
+      <BookOpen className="w-6 h-6" />
     ),
     title: 'Connaissance profonde de Dieu',
     description: 'Développer chez les étudiants une connaissance intime de Dieu et de Sa Parole, loin d\'une simple théorie.',
   },
   {
     icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" fill="currentColor" stroke="none" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-      </svg>
+      <ShieldCheck className="w-6 h-6" />
     ),
     title: 'Caractère de Christ',
     description: 'Façonner un caractère conforme à celui de Jésus-Christ : humilité, intégrité, service et discipline.',
   },
   {
     icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" fill="currentColor" stroke="none" d="M18 16c-.79 0-1.5.31-2.03.81L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
-      </svg>
+      <Wrench className="w-6 h-6" />
     ),
     title: 'Compétences pratiques',
     description: 'Fournir des capacités et outils spirituels concrets pour le ministère et l\'œuvre de la moisson.',
@@ -165,7 +160,7 @@ export default function Home() {
                   href="/programme"
                   className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 text-base backdrop-blur-sm"
                 >
-                  Programme de culte
+                  Nos Programmes
                 </Link>
               </div>
             </div>
@@ -209,8 +204,8 @@ export default function Home() {
         </div>
 
         {/* Bottom wave */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+        <div className="absolute bottom-[-1px] left-0 right-0">
+          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full block">
             <path d="M0 80L1440 80L1440 40C1440 40 1080 0 720 0C360 0 0 40 0 40L0 80Z" fill="white"/>
           </svg>
         </div>
@@ -427,11 +422,11 @@ export default function Home() {
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight mb-6 uppercase">
-            Que la grâce du<br />Seigneur soit avec vous
+           Mot du Recteur
           </h2>
 
           <p className="text-white/90 text-xl leading-relaxed mb-10 max-w-2xl mx-auto">
-            Acceptez la discipline de l'académie, grandissez spirituellement, et préparez-vous pour l'œuvre merveilleuse que Dieu a pour vous.
+            Ce manuel 
           </p>
 
           <Link
