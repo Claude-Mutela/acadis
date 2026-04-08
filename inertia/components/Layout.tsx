@@ -1,5 +1,7 @@
 import { ReactNode, useState } from 'react'
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, usePage } from '@inertiajs/react'
+import { FaFacebook, FaInstagram, FaTiktok, FaYoutube, FaWhatsapp } from 'react-icons/fa6'
+import { Menu, X } from 'lucide-react'
 
 interface LayoutProps {
   children: ReactNode
@@ -8,11 +10,17 @@ interface LayoutProps {
 
 export default function Layout({ children, title = 'ACADIS — Académie des Disciples' }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { url } = usePage()
+
+  const isActive = (href: string) => {
+    if (href === '/') return url === '/'
+    return url.startsWith(href)
+  }
 
   const navLinks = [
     { href: '/', label: 'Accueil' },
+    { href: '/about', label: 'À propos' },
     { href: '/programme', label: 'Programmes' },
-    { href: '/module', label: 'Modules' },
     { href: '/calendrier', label: 'Calendrier' },
     { href: '/contact', label: 'Contact' },
   ]
@@ -47,7 +55,11 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-gray-700 hover:text-orange px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-orange-50"
+                  className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+                    isActive(link.href)
+                      ? 'text-orange bg-orange/10 font-bold shadow-sm'
+                      : 'text-gray-700 hover:text-orange hover:bg-orange-50 font-semibold'
+                  }`}
                 >
                   {link.label}
                 </Link>
@@ -72,13 +84,9 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-6 w-6 stroke-[2px]" />
               ) : (
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
+                <Menu className="h-6 w-6 stroke-[2px]" />
               )}
             </button>
           </div>
@@ -92,7 +100,11 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block text-gray-700 hover:text-orange hover:bg-orange-50 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                className={`block px-4 py-2.5 rounded-lg text-sm transition-all ${
+                  isActive(link.href)
+                    ? 'text-orange bg-orange/10 font-bold shadow-sm'
+                    : 'text-gray-700 hover:text-orange hover:bg-orange-50 font-semibold'
+                }`}
               >
                 {link.label}
               </Link>
@@ -139,12 +151,26 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
                 "Former les disciples pour bâtir une église mature"
               </p>
               
-              <div className="flex gap-3 mt-6">
+              <div className="flex flex-wrap gap-3 mt-6">
+                {/* TikTok */}
+                <a href="#" aria-label="TikTok" className="w-9 h-9 bg-gray-800 hover:bg-orange rounded-lg flex items-center justify-center transition-colors duration-200">
+                  <FaTiktok className="w-4 h-4 text-white" />
+                </a>
+                {/* Instagram */}
+                <a href="#" aria-label="Instagram" className="w-9 h-9 bg-gray-800 hover:bg-orange rounded-lg flex items-center justify-center transition-colors duration-200">
+                  <FaInstagram className="w-4.5 h-4.5 text-white" />
+                </a>
                 {/* Facebook */}
                 <a href="#" aria-label="Facebook" className="w-9 h-9 bg-gray-800 hover:bg-orange rounded-lg flex items-center justify-center transition-colors duration-200">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
-                  </svg>
+                  <FaFacebook className="w-4.5 h-4.5 text-white" />
+                </a>
+                {/* YouTube */}
+                <a href="#" aria-label="YouTube" className="w-9 h-9 bg-gray-800 hover:bg-orange rounded-lg flex items-center justify-center transition-colors duration-200">
+                  <FaYoutube className="w-5 h-5 text-white" />
+                </a>
+                {/* WhatsApp */}
+                <a href="https://wa.me/243999975628" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="w-9 h-9 bg-gray-800 hover:text-white hover:bg-[#25D366] rounded-lg flex items-center justify-center transition-colors duration-200">
+                  <FaWhatsapp className="w-5 h-5 text-white" />
                 </a>
               </div>
             </div>
@@ -183,7 +209,7 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
                   <svg className="w-4 h-4 text-orange mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                   </svg>
-                  +243 9 999 51 032
+                  +243 99 997 56 28
                 </li>
               </ul>
             </div>
