@@ -76,7 +76,7 @@ const programmes = [
     titre: 'Doulos',
     categorie: 'Service',
     duree: '1 mois',
-    description: 'Apprendre le service, l\' humilité et l\'obéissance à l\'image de Christ, le serviteur par excellence.',
+    description: 'Apprendre le service, l\'humilité et l\'obéissance à l\'image de Christ, le serviteur par excellence.',
     image: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800&auto=format&fit=crop',
     icon: <Landmark className="w-6 h-6" strokeWidth={1.5} />,
   },
