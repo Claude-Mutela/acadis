@@ -76,7 +76,7 @@ export default function About() {
             équiper pour <span className="text-orange">bâtir</span>.
           </h1>
           <p className="text-gray-300 text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
-            L'Académie des Disciples (ACADIS) est le bras éducatif et spirituel de Philadelphie Maison de Témoignages, dédié à forger la prochaine génération de leaders chrétiens.
+            L'Académie des Disciples (ACADIS) est le bras éducatif et spirituel de Phila Maison de Témoignages, dédié à forger la prochaine génération de leaders chrétiens.
           </p>
         </div>
 
@@ -122,7 +122,7 @@ export default function About() {
                   ACADIS est née d'une prière profonde et d'une prise de conscience majeure du <strong>Pasteur Blonsky MBALA</strong> : la moisson est grande, mais les ouvriers qualifiés – tant spirituellement que sur le plan de leur caractère – sont rares.
                 </p>
                 <p>
-                  Depuis sa fondation au sein de <em>Philadelphie Maison de Témoignages</em>, l'académie s'est donné pour mandat de combler le fossé entre la ferveur spirituelle et la maturité doctrinale. Il ne s'agit pas simplement d'accumuler des connaissances théologiques, mais d'amorcer un processus de transformation radicale touchant l'intelligence, le cœur et la vie pratique.
+                  Depuis sa fondation au sein de <em>Phila Maison de Témoignages</em>, l'académie s'est donné pour mandat de combler le fossé entre la ferveur spirituelle et la maturité doctrinale. Il ne s'agit pas simplement d'accumuler des connaissances théologiques, mais d'amorcer un processus de transformation radicale touchant l'intelligence, le cœur et la vie pratique.
                 </p>
                 <p>
                   Aujourd'hui, ACADIS forme des centaines d'hommes et de femmes pour qu'ils deviennent des "Doulos" (serviteurs) ancrés dans la doctrine, capables de résister aux vents des fausses doctrines et équipés de manière pratique pour exercer les dons que Dieu leur a confiés.
