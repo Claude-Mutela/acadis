@@ -53,7 +53,7 @@ const hebdomadaire = [
     heure: '17H30 - 19H30',
     titre: 'Culte d\'Enseignement (Malakisi)',
     description: 'Approfondissement de la doctrine chrétienne et étude systématique des Saintes Écritures.',
-    lieu: 'Temple de l\'Eglise',
+    lieu: 'Temple de l\'Eglise & Live',
     icon: <BookOpen className="w-6 h-6" />
   },
   {
@@ -61,7 +61,7 @@ const hebdomadaire = [
     heure: '17H30 - 19H30',
     titre: 'Culte d\'Intercession (Etoko)',
     description: 'Temps de prière fervente, de jeûne corporatif et de combat spirituel sacerdotal.',
-    lieu: 'Temple de l\'Eglise',
+    lieu: 'Temple de l\'Eglise & Live',
     icon: <Flame className="w-6 h-6" />
   },
   {
@@ -69,7 +69,7 @@ const hebdomadaire = [
     heure: '08H00 - 10H00',
     titre: 'Culte de Célébration',
     description: 'Rassemblement de toute l\'assemblée pour la louange, l\'adoration et la prédication dominicale.',
-    lieu: 'Temple de l\'Eglise',
+    lieu: 'Temple de l\'Eglise & Live',
     icon: <Users className="w-6 h-6" />
   }
 ]
@@ -264,7 +264,7 @@ export default function Calendrier() {
                 </p>
                 <div className="flex items-center gap-2 text-sm text-gray-500 font-medium pt-5 border-t border-gray-800">
                   <MapPin className="w-4 h-4 text-orange" />
-                  {jour.lieu}
+                  {jour.lieu} 
                 </div>
               </div>
             ))}
