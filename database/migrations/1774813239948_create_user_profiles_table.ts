@@ -13,8 +13,7 @@ export default class extends BaseSchema {
       table.string('last_name').notNullable()
       table.string('phone').nullable()
       table.string('avatar').nullable()
-      table.text('address').nullable()
-      table.text('email').nullable()
+      table.text('email').notNullable()
 
       table.timestamp('created_at')
       table.timestamp('updated_at')
