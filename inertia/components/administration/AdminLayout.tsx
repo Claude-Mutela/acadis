@@ -9,13 +9,15 @@ import {
   Menu,
   Bell,
   Search,
-  ChevronDown
+  ChevronDown,
+  Landmark
 } from 'lucide-react'
 import { useState } from 'react'
 
 const navigation = [
   { name: 'Dashboard', href: '/administration/dashboard', icon: LayoutDashboard },
   { name: 'Étudiants', href: '/administration/etudiants', icon: Users },
+  { name: 'Ministères', href: '/administration/ministeres', icon: Landmark },
   { name: 'Formateurs', href: '/administration/formateurs', icon: GraduationCap },
   { name: 'Programmes', href: '/administration/programmes', icon: BookOpen },
   { name: 'Paiements', href: '/administration/paiements', icon: CreditCard },
