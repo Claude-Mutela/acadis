@@ -32,9 +32,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'Poppins', 'Roboto', 'sans-serif'],
+        sans: ['Montserrat', 'Inter', 'sans-serif'],
         inter: ['Inter', 'sans-serif'],
-        poppins: ['Poppins', 'sans-serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.6s ease-in-out',
