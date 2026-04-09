@@ -43,11 +43,13 @@ export default function AdminLayout({ children, title = 'Administration' }: { ch
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="h-20 flex items-center px-6 bg-gray-950/50 border-b border-gray-800 font-black text-xl tracking-wider">
-          <div className="w-9 h-9 rounded-xl bg-orange text-white flex items-center justify-center mr-3 shadow-lg shadow-orange/20">
-            A
-          </div>
-          ACADIS Admin
+        <div className="h-20 flex items-center px-4 bg-gray-950/50 border-b border-gray-800">
+          <img 
+            src="/logo ACADIS.png" 
+            alt="Logo ACADIS" 
+            className="h-10 w-auto mr-3 brightness-0 invert opacity-90" 
+          />
+          <span className="font-black text-lg tracking-wider text-white">Admin</span>
         </div>
         
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">

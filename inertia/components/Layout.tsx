@@ -36,17 +36,11 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 bg-orange rounded-lg flex items-center justify-center text-white font-black text-sm shadow-sm group-hover:scale-105 transition-transform">
-                A
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-black tracking-tight text-black leading-none">
-                  ACADIS
-                </span>
-                <span className="text-[10px] uppercase text-gray-500 font-bold tracking-widest mt-0.5">
-                  Académie des disciples
-                </span>
-              </div>
+              <img 
+                src="/logo ACADIS.png" 
+                alt="Logo ACADIS" 
+                className="h-12 w-auto group-hover:scale-105 transition-transform origin-left" 
+              />
             </Link>
 
             {/* Desktop Nav */}
@@ -133,16 +127,12 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
 
             {/* Brand column */}
             <div className="md:col-span-2">
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <div className="w-9 h-9 bg-orange rounded-lg flex items-center justify-center text-white font-black text-sm">
-                  A
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xl font-black tracking-tight text-white leading-none">ACADIS</span>
-                  <span className="text-[10px] uppercase text-orange font-bold tracking-widest mt-0.5">
-                    Académie des disciples
-                  </span>
-                </div>
+              <Link href="/" className="flex items-center gap-2 mb-6">
+                <img 
+                  src="/logo ACADIS.png" 
+                  alt="Logo ACADIS" 
+                  className="h-14 w-auto brightness-0 invert" 
+                />
               </Link>
               <p className="text-gray-400 text-sm leading-relaxed max-w-sm mb-2 font-medium">
                 Philadelphie Maison de Témoignages

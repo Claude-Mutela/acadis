@@ -25,9 +25,11 @@ export default function StudentLayout({ children, title }: StudentLayoutProps) {
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
         <div className="h-20 flex items-center px-8 border-b border-gray-100">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-orange rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-transform shadow-lg shadow-orange/30">
-              <span className="text-white font-black text-xl">A</span>
-            </div>
+            <img 
+              src="/logo ACADIS.png" 
+              alt="Logo ACADIS" 
+              className="h-10 w-auto transform group-hover:scale-105 transition-transform" 
+            />
             <div className="flex flex-col">
               <span className="text-gray-900 font-black text-lg leading-tight tracking-tight">Espace</span>
               <span className="text-gray-500 font-bold text-xs uppercase tracking-widest leading-none">Étudiant</span>
