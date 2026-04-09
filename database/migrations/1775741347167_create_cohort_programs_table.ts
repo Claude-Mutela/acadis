@@ -1,15 +1,13 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'students'
+  protected tableName = 'cohort_programs'
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
-      table.text('email').notNullable()
-      table.string('password').notNullable()
-      table.enum('role', ['student']).defaultTo('student').notNullable()
-      table.enum('status', ['active', 'pending', 'rejected']).defaultTo('pending').notNullable()
+      table.integer('cohort_id').unsigned().references('cohorts.id').onDelete('CASCADE').index().notNullable()
+      table.integer('program_id').unsigned().references('programs.id').onDelete('CASCADE').index().notNullable()
       table.timestamp('created_at').nullable()
       table.timestamp('updated_at').nullable()
     })

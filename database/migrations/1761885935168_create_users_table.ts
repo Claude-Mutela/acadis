@@ -12,7 +12,7 @@ export default class extends BaseSchema {
       table.enum('role', ['superadmin', 'admin', 'student', 'trainer']).defaultTo('student').notNullable()
       table.enum('status', ['active', 'inactive', 'suspended']).defaultTo('active').notNullable()
 
-      table.timestamp('created_at').notNullable()
+      table.timestamp('created_at').nullable()
       table.timestamp('updated_at').nullable()
     })
   }
