@@ -21,6 +21,7 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
     { href: '/', label: 'Accueil' },
     { href: '/about', label: 'À propos' },
     { href: '/programme', label: 'Programmes' },
+    { href: '/galerie', label: 'Galerie' },
     { href: '/calendrier', label: 'Calendrier' },
     { href: '/contact', label: 'Contact' },
   ]
