@@ -7,6 +7,42 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+export class AlbumSchema extends BaseModel {
+  static $columns = ['albumCategoryId', 'coverImg', 'createdAt', 'description', 'id', 'slug', 'title', 'updatedAt'] as const
+  $columns = AlbumSchema.$columns
+  @column()
+  declare albumCategoryId: number | null
+  @column()
+  declare coverImg: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare description: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare slug: string
+  @column()
+  declare title: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class AlbumCategorySchema extends BaseModel {
+  static $columns = ['createdAt', 'description', 'id', 'name', 'updatedAt'] as const
+  $columns = AlbumCategorySchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare description: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class CohortSchema extends BaseModel {
   static $columns = ['createdAt', 'endDate', 'id', 'name', 'slug', 'startDate', 'updatedAt'] as const
   $columns = CohortSchema.$columns
@@ -52,6 +88,27 @@ export class DepartmentSchema extends BaseModel {
   declare id: number
   @column()
   declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class ImageSchema extends BaseModel {
+  static $columns = ['albumId', 'createdAt', 'date', 'filePath', 'id', 'location', 'title', 'updatedAt'] as const
+  $columns = ImageSchema.$columns
+  @column()
+  declare albumId: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column.date()
+  declare date: DateTime | null
+  @column()
+  declare filePath: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare location: string | null
+  @column()
+  declare title: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }
@@ -301,6 +358,23 @@ export class StudentProfileSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare worker: boolean
+}
+
+export class TestimonySchema extends BaseModel {
+  static $columns = ['content', 'createdAt', 'id', 'studentId', 'updatedAt', 'userId'] as const
+  $columns = TestimonySchema.$columns
+  @column()
+  declare content: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare studentId: number | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number | null
 }
 
 export class TrainerSchema extends BaseModel {
