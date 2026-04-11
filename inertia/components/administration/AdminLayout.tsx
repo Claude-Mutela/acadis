@@ -16,6 +16,7 @@ import { useState } from 'react'
 
 const navigation = [
   { name: 'Dashboard', href: '/administration/dashboard', icon: LayoutDashboard },
+  { name: 'Utilisateurs', href: '/administration/utilisateurs', icon: Users },
   { name: 'Étudiants', href: '/administration/etudiants', icon: Users },
   { name: 'Ministères', href: '/administration/ministeres', icon: Landmark },
   { name: 'Formateurs', href: '/administration/formateurs', icon: GraduationCap },
