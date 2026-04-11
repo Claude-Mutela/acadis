@@ -1,0 +1,31 @@
+import { DateTime } from 'luxon'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
+import User from './user.js'
+import Student from './student.js'
+
+export default class Testimony extends BaseModel {
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column()
+  declare userId: number | null
+
+  @column()
+  declare studentId: number | null
+
+  @column()
+  declare content: string
+
+  @belongsTo(() => User)
+  declare user: BelongsTo<typeof User>
+
+  @belongsTo(() => Student)
+  declare student: BelongsTo<typeof Student>
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
