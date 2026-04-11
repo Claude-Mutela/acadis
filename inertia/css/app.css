@@ -61,6 +61,16 @@ a {
   }
 }
 
+@layer utilities {
+  .hide-scroll-bar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .hide-scroll-bar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+
 @keyframes scale-up {
   from { transform: scale(0.7); }
   to { transform: scale(1); }
