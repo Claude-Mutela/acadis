@@ -26,6 +26,7 @@ router.on('/contact').renderInertia('contact', {}).as('contact')
 
 // Administration
 router.on('/administration/dashboard').renderInertia('administration/dashboard', {}).as('admin.dashboard')
+router.on('/administration/utilisateurs').renderInertia('administration/users/index', {}).as('admin.users.index')
 router.on('/administration/ministeres').renderInertia('administration/ministeres/index', {}).as('admin.ministeres.index')
 router.on('/administration/formateurs').renderInertia('administration/formateurs/index', {}).as('admin.formateurs.index')
 router.on('/administration/etudiants').renderInertia('administration/etudiants/index', {}).as('admin.etudiants.index')
