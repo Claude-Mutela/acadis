@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Link } from '@inertiajs/react'
 import Layout from '../components/Layout'
 import { BookOpen, ShieldCheck, Wrench, User, Award, HandHeart, Gift, Heart, Clock, ClipboardList, GraduationCap } from 'lucide-react'
@@ -83,6 +84,14 @@ const temoignages = [
   },
 ]
 
+const galerieImages = [
+  { id: 1, src: 'https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?q=80&w=2574&auto=format&fit=crop', alt: 'Étudiants en formation' },
+  { id: 2, src: 'https://images.unsplash.com/photo-1544716278-e513176f20b5?q=80&w=2574&auto=format&fit=crop', alt: 'Étude et partage' },
+  { id: 3, src: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?q=80&w=2574&auto=format&fit=crop', alt: 'Temps de communauté' },
+  { id: 4, src: 'https://images.unsplash.com/photo-1438283173091-5dbf5c5a3206?q=80&w=2574&auto=format&fit=crop', alt: 'Culte et Adoration' },
+  { id: 5, src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=2574&auto=format&fit=crop', alt: 'Célébration' },
+]
+
 const pointsCles = [
   {
     icon: (
@@ -110,6 +119,28 @@ const pointsCles = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const carouselRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (carouselRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current
+        
+        // Détecte la taille d'un "slide" approximativement grâce à la largeur de l'écran
+        const scrollAmount = clientWidth > 1024 ? clientWidth * 0.35 : (clientWidth > 640 ? clientWidth * 0.6 : clientWidth * 0.85)
+
+        // Si on est rendu au bout du défilement
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          carouselRef.current.scrollTo({ left: 0, behavior: 'smooth' })
+        } else {
+          carouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+        }
+      }
+    }, 4000) // Change d'image toutes les 4 secondes
+
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <Layout title="Accueil — ACADIS | Académie des Disciples">
 
@@ -341,6 +372,61 @@ export default function Home() {
           <div className="mt-12 text-center text-sm text-gray-500">
             <p>Conditions d'admission : Être engagé, accepter la discipline, remplir le formulaire.</p>
           </div>
+        </div>
+      </section>
+
+
+      {/* ════════════════════════════════════════════════════════
+          4.5 GALERIE (CARROUSEL)
+      ════════════════════════════════════════════════════════ */}
+      <section className="py-20 bg-gray-50 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 text-center">
+             <span className="inline-block bg-orange/10 text-orange text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
+               Galerie ACADIS
+             </span>
+             <h2 className="text-3xl sm:text-4xl font-black text-black mb-4">
+               Immersion dans l'académie
+             </h2>
+             <p className="text-gray-500 max-w-xl mx-auto text-lg">
+               Découvrez en images nos moments forts : temps de formation, d'adoration et de communion fraternelle.
+             </p>
+        </div>
+
+        {/* Carousel Container */}
+        <div 
+          ref={carouselRef}
+          className="w-full flex overflow-x-auto snap-x snap-mandatory hide-scroll-bar gap-4 sm:gap-6 px-4 sm:px-12 lg:px-24 pb-10 pt-4"
+        >
+          {galerieImages.map((img) => (
+            <div 
+               key={img.id}
+               className="flex-none w-[85%] sm:w-[60%] md:w-[45%] lg:w-[35%] snap-center rounded-2xl overflow-hidden shadow-lg group relative aspect-[4/3] bg-gray-200"
+            >
+              <img 
+                src={img.src} 
+                alt={img.alt} 
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-transparent opacity-100 flex items-end p-6">
+                 <p className="text-white font-bold text-lg lg:text-xl">
+                    {img.alt}
+                 </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 text-center animate-fade-in-up">
+           <Link 
+             href="/galerie" 
+             className="inline-flex items-center justify-center gap-2 bg-brand-black hover:bg-brand-orange text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 shadow-xl hover:shadow-brand-orange/30 group tracking-wide"
+           >
+             Voir toute la galerie
+             <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+             </svg>
+           </Link>
         </div>
       </section>
 
