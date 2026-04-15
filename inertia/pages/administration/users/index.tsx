@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Head } from '@inertiajs/react'
+import { useForm } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
 import { 
   Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, User, Mail, Shield, Phone, Eye, EyeOff
@@ -86,16 +87,11 @@ export default function UsersIndex() {
   const openCreateModal = () => {
     setModalMode('create')
     setCurrentUser({ 
-      id: 0, 
-      first_name: '', 
-      last_name: '', 
-      email: '', 
-      phone: '',
-      role: 'student',
-      status: 'active',
-      password: '',
+      id: 0, first_name: '', last_name: '', email: '', phone: '',
+      role: 'student', status: 'active', password: '',
       date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) 
     })
+    setData({ firstName: '', lastName: '', email: '', password: '', role: 'student', status: 'active' })
     setIsModalOpen(true)
     setShowPassword(false)
   }
@@ -103,6 +99,7 @@ export default function UsersIndex() {
   const openEditModal = (user: UserData) => {
     setModalMode('edit')
     setCurrentUser({ ...user, password: '' })
+    setData({ firstName: user.first_name, lastName: user.last_name, email: user.email, password: '', role: user.role as any, status: user.status as any })
     setIsModalOpen(true)
     setShowPassword(false)
   }
@@ -111,21 +108,29 @@ export default function UsersIndex() {
     setCurrentUser(user)
     setIsDeleteModalOpen(true)
   }
+  // ── Formulaire ─────────────────────────────────────────────────────────────
+  const { data, setData, post, put, processing, errors } = useForm({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    role: 'student' as 'superadmin' | 'admin' | 'student' | 'trainer',
+    status: 'active' as 'active' | 'inactive' | 'suspended',
+  })
 
   const handleSaveUser = (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentUser) return
 
-    const { password, ...userToSave } = currentUser
-
     if (modalMode === 'create') {
-      const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1
-      setUsers([{ ...userToSave as UserData, id: newId }, ...users])
+      post('/administration/utilisateurs', {
+        onSuccess: () => setIsModalOpen(false),
+      })
     } else {
-      setUsers(users.map(u => u.id === userToSave.id ? userToSave as UserData : u))
+      put(`/administration/utilisateurs/${currentUser.id}`, {
+        onSuccess: () => setIsModalOpen(false),
+      })
     }
-    
-    setIsModalOpen(false)
   }
 
   const confirmDelete = () => {
@@ -344,7 +349,7 @@ export default function UsersIndex() {
             </div>
 
             <div className="overflow-y-auto flex-1 p-6">
-              <form id="userUpdateForm" onSubmit={handleSaveUser} className="space-y-6">
+              <form id="userUpdateForm" onSubmit={handleSaveUser} method="POST" className="space-y-6">
                 
                 {/* Informations de base */}
                 <div>
@@ -356,11 +361,12 @@ export default function UsersIndex() {
                         <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input 
                           type="text" required
-                          value={currentUser.first_name} 
-                          onChange={e => setCurrentUser({...currentUser, first_name: e.target.value})}
+                          value={data.firstName} 
+                          onChange={e => setData('firstName', e.target.value)}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
                         />
                       </div>
+                      {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-1.5">Nom</label>
@@ -368,11 +374,12 @@ export default function UsersIndex() {
                         <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input 
                           type="text" required
-                          value={currentUser.last_name} 
-                          onChange={e => setCurrentUser({...currentUser, last_name: e.target.value})}
+                          value={data.lastName} 
+                          onChange={e => setData('lastName', e.target.value)}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
                         />
                       </div>
+                      {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-1.5">Email</label>
@@ -380,23 +387,12 @@ export default function UsersIndex() {
                         <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input 
                           type="email" required
-                          value={currentUser.email} 
-                          onChange={e => setCurrentUser({...currentUser, email: e.target.value})}
+                          value={data.email} 
+                          onChange={e => setData('email', e.target.value)}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
                         />
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Téléphone</label>
-                      <div className="relative">
-                        <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="tel" required
-                          value={currentUser.phone} 
-                          onChange={e => setCurrentUser({...currentUser, phone: e.target.value})}
-                          className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
-                        />
-                      </div>
+                      {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                     </div>
                   </div>
                 </div>
@@ -410,8 +406,8 @@ export default function UsersIndex() {
                       <div className="relative">
                         <Shield className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <select 
-                          value={currentUser.role} 
-                          onChange={e => setCurrentUser({...currentUser, role: e.target.value as UserData['role']})}
+                          value={data.role} 
+                          onChange={e => setData('role', e.target.value as any)}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
                         >
                           <option value="student">Étudiant (Student)</option>
@@ -420,18 +416,20 @@ export default function UsersIndex() {
                           <option value="superadmin">Super Administrateur</option>
                         </select>
                       </div>
+                      {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-1.5">Statut du Compte</label>
                       <select 
-                        value={currentUser.status} 
-                        onChange={e => setCurrentUser({...currentUser, status: e.target.value as UserData['status']})}
+                        value={data.status} 
+                        onChange={e => setData('status', e.target.value as any)}
                         className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
                       >
                          <option value="active">Actif</option>
                          <option value="inactive">Inactif</option>
                          <option value="suspended">Suspendu</option>
                       </select>
+                      {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
                     </div>
                   </div>
                 </div>
@@ -448,8 +446,8 @@ export default function UsersIndex() {
                         <input 
                           type={showPassword ? "text" : "password"}
                           placeholder={modalMode === 'create' ? "••••••••" : "Ne pas modifier"}
-                          value={currentUser.password} 
-                          onChange={e => setCurrentUser({...currentUser, password: e.target.value})}
+                          value={data.password}
+                          onChange={e => setData('password', e.target.value)}
                           className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
                         />
                         <button 
@@ -460,6 +458,7 @@ export default function UsersIndex() {
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                      {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
                       <p className="text-[10px] text-gray-400 mt-1.5">
                         {modalMode === 'create' ? 'Un mot de passe fort est recommandé.' : 'Si vous renseignez ce champ, le mot de passe de l\'utilisateur sera mis à jour.'}
                       </p>
@@ -473,8 +472,8 @@ export default function UsersIndex() {
               <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-xl transition-colors">
                 Annuler
               </button>
-              <button type="submit" form="userUpdateForm" className="flex-1 py-3 bg-black hover:bg-gray-900 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-0.5">
-                {modalMode === 'create' ? 'Créer l\'utilisateur' : 'Enregistrer les modifications'}
+              <button type="submit" form="userUpdateForm" disabled={processing} className="flex-1 py-3 bg-black hover:bg-gray-900 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed">
+                {processing ? 'Enregistrement...' : modalMode === 'create' ? 'Créer l\'utilisateur' : 'Enregistrer les modifications'}
               </button>
             </div>
           </div>
