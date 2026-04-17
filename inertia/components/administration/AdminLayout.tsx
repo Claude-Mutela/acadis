@@ -1,4 +1,6 @@
 import { Link, usePage } from '@inertiajs/react'
+import { Toaster, toast } from 'sonner'
+import { useEffect, useState } from 'react'
 import { 
   LayoutDashboard, 
   Users, 
@@ -12,7 +14,6 @@ import {
   ChevronDown,
   Landmark
 } from 'lucide-react'
-import { useState } from 'react'
 
 const navigation = [
   { name: 'Dashboard', href: '/administration/dashboard', icon: LayoutDashboard },
@@ -26,12 +27,23 @@ const navigation = [
 ]
 
 export default function AdminLayout({ children, title = 'Administration' }: { children: React.ReactNode, title?: string }) {
-  const { url } = usePage()
+  const { url, props } = usePage<any>()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
 
+  // Écoute des messages Flash
+  useEffect(() => {
+    if (props.flash?.success) {
+      toast.success(props.flash.success)
+    }
+    if (props.flash?.error) {
+      toast.error(props.flash.error)
+    }
+  }, [props.flash])
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <Toaster position="top-right" richColors />
       {/* Sidebar Mobile Overlay */}
       {sidebarOpen && (
         <div 

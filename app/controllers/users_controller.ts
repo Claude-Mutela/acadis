@@ -14,7 +14,7 @@ export default class UsersController {
   /**
    * POST /administration/utilisateurs
    */
-  async store({ request, inertia }: HttpContext) {
+  async store({ request, response, session }: HttpContext) {
     const data = await request.validateUsing(createUserValidator)
 
     // Le mot de passe est automatiquement hashé par withAuthFinder (via le hook beforeSave)
@@ -27,7 +27,8 @@ export default class UsersController {
       status: data.status,
     })
 
-    return inertia.render('administration/users/index', { user })
+    session.flash('success', 'Utilisateur créé avec succès !')
+    return response.redirect().toRoute('admin.users.index')
   }
 
   /**
