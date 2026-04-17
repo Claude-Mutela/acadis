@@ -1,40 +1,28 @@
 import { useState, useMemo } from 'react'
-import { Head } from '@inertiajs/react'
-import { useForm } from '@inertiajs/react'
+import { Head, useForm, usePage, router } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
 import { 
   Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, User, Mail, Shield, Phone, Eye, EyeOff
 } from 'lucide-react'
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-const initialUsers = [
-  { 
-    id: 1, first_name: 'Jean', last_name: 'Dupont', email: 'jean.dupont@email.com', phone: '+243999975628', 
-    role: 'superadmin', status: 'active', date: '12 Mar 2026' 
-  },
-  { 
-    id: 2, first_name: 'Alice', last_name: 'Mvuba', email: 'alice.m@email.com', phone: '+243900000000', 
-    role: 'admin', status: 'active', date: '10 Mar 2026' 
-  },
-  { 
-    id: 3, first_name: 'Fabrice', last_name: 'Nkongolo', email: 'fab.nk@email.com', phone: '+243810000000', 
-    role: 'trainer', status: 'active', date: '08 Mar 2026' 
-  },
-  { 
-    id: 4, first_name: 'Sarah', last_name: 'Kasongo', email: 'sarah.k@email.com', phone: '+243890000000', 
-    role: 'student', status: 'inactive', date: '01 Mar 2026' 
-  },
-]
-
 const rolesList = ['Tous', 'superadmin', 'admin', 'trainer', 'student']
 const statusList = ['Tous', 'active', 'inactive', 'suspended']
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type UserData = typeof initialUsers[0]
+export type UserData = {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  role: string
+  status: string
+  createdAt: string
+  profile?: { phone: string | null }
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function UsersIndex() {
-  const [users, setUsers] = useState<UserData[]>(initialUsers)
+  const { users } = usePage<{ users: UserData[] }>().props
   
   // États de recherche et filtre
   const [search, setSearch] = useState('')
@@ -53,10 +41,11 @@ export default function UsersIndex() {
   
   // ── Logique Métier (Filtrage & Pagination) ──────────────────────────────────
   const filteredUsers = useMemo(() => {
-    return users.filter(user => {
+    const list = users || []
+    return list.filter(user => {
       const matchSearch = 
-        user.last_name.toLowerCase().includes(search.toLowerCase()) || 
-        user.first_name.toLowerCase().includes(search.toLowerCase()) || 
+        user.lastName.toLowerCase().includes(search.toLowerCase()) || 
+        user.firstName.toLowerCase().includes(search.toLowerCase()) || 
         user.email.toLowerCase().includes(search.toLowerCase())
       
       const matchRole = filterRole === 'Tous' || user.role === filterRole
@@ -87,10 +76,9 @@ export default function UsersIndex() {
   const openCreateModal = () => {
     setModalMode('create')
     setCurrentUser({ 
-      id: 0, first_name: '', last_name: '', email: '', phone: '',
-      role: 'student', status: 'active', password: '',
-      date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) 
-    })
+      id: 0, firstName: '', lastName: '', email: '', 
+      role: 'student', status: 'active', createdAt: new Date().toISOString()
+    } as UserData)
     setData({ firstName: '', lastName: '', email: '', password: '', role: 'student', status: 'active' })
     setIsModalOpen(true)
     setShowPassword(false)
@@ -98,8 +86,8 @@ export default function UsersIndex() {
 
   const openEditModal = (user: UserData) => {
     setModalMode('edit')
-    setCurrentUser({ ...user, password: '' })
-    setData({ firstName: user.first_name, lastName: user.last_name, email: user.email, password: '', role: user.role as any, status: user.status as any })
+    setCurrentUser({ ...user, password: '' } as any)
+    setData({ firstName: user.firstName, lastName: user.lastName, email: user.email, password: '', role: user.role as any, status: user.status as any })
     setIsModalOpen(true)
     setShowPassword(false)
   }
@@ -135,9 +123,12 @@ export default function UsersIndex() {
 
   const confirmDelete = () => {
     if (currentUser) {
-      setUsers(users.filter(u => u.id !== currentUser.id))
-      setIsDeleteModalOpen(false)
-      setCurrentUser(null)
+      router.delete(`/administration/utilisateurs/${currentUser.id}`, {
+        onSuccess: () => {
+          setIsDeleteModalOpen(false)
+          setCurrentUser(null)
+        }
+      })
     }
   }
 
@@ -230,16 +221,16 @@ export default function UsersIndex() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-orange/10 text-orange flex items-center justify-center font-bold text-sm flex-shrink-0 uppercase">
-                          {user.first_name[0]}{user.last_name[0]}
+                          {user.firstName?.[0] || ''}{user.lastName?.[0] || ''}
                         </div>
                         <div>
-                          <div className="font-bold text-gray-900">{user.first_name} {user.last_name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">Inscrit le {user.date}</div>
+                          <div className="font-bold text-gray-900">{user.firstName} {user.lastName}</div>
+                          <div className="text-xs text-gray-400 mt-0.5">Inscrit le {new Date(user.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600 font-medium">{user.phone}</div>
+                      <div className="text-sm text-gray-600 font-medium">{user.profile?.phone || '—'}</div>
                       <div className="text-xs text-gray-400">{user.email}</div>
                     </td>
                     <td className="px-6 py-4">
@@ -490,7 +481,7 @@ export default function UsersIndex() {
             </div>
             <h3 className="text-xl font-black text-gray-900 mb-2">Supprimer l'utilisateur ?</h3>
             <p className="text-gray-500 text-sm mb-6">
-              Êtes-vous sûr de vouloir supprimer <strong>{currentUser.first_name} {currentUser.last_name}</strong> ? Cette action supprimera également son profil et ses accès.
+              Êtes-vous sûr de vouloir supprimer <strong>{currentUser.firstName} {currentUser.lastName}</strong> ? Cette action supprimera également son profil et ses accès.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-xl transition-colors">

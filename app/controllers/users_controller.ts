@@ -7,7 +7,8 @@ export default class UsersController {
    * GET /administration/utilisateurs
    */
   async index({ inertia }: HttpContext) {
-    const users = await User.all()
+    //afficher les données liées au profil de l'utilisateur
+    const users = await User.query().preload('profile').orderBy('createdAt', 'desc')
     return inertia.render('administration/users/index', { users })
   }
 
@@ -34,20 +35,22 @@ export default class UsersController {
   /**
    * PUT /administration/utilisateurs/:id
    */
-  async update({ params, request, response }: HttpContext) {
+  async update({ params, request, session, response }: HttpContext) {
     const user = await User.findOrFail(params.id)
     const data = request.only(['firstName', 'lastName', 'email', 'role', 'status'])
     user.merge(data)
     await user.save()
+    session.flash('success', 'Utilisateur modifié avec succès !')
     return response.redirect().toRoute('admin.users.index')
   }
 
   /**
    * DELETE /administration/utilisateurs/:id
    */
-  async destroy({ params, response }: HttpContext) {
+  async destroy({ params, response, session }: HttpContext) {
     const user = await User.findOrFail(params.id)
     await user.delete()
+    session.flash('success', 'Utilisateur supprimé avec succès !')
     return response.redirect().toRoute('admin.users.index')
   }
 }
