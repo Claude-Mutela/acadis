@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bienvenue sur {{ brandName }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #f0f4f8;
+      color: #1a202c;
+    }
+    .wrapper {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 100%);
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      color: rgba(255,255,255,0.75);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    .body {
+      padding: 40px 32px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e3a5f;
+      margin-bottom: 16px;
+    }
+    .text {
+      font-size: 15px;
+      color: #4a5568;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .credentials-box {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2d6a9f;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+    }
+    .credentials-box p {
+      font-size: 14px;
+      color: #4a5568;
+      margin-bottom: 10px;
+    }
+    .credentials-box p:last-child { margin-bottom: 0; }
+    .credentials-box strong {
+      display: inline-block;
+      width: 130px;
+      color: #1e3a5f;
+    }
+    .credentials-box .value {
+      font-family: 'Courier New', monospace;
+      background: #edf2f7;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #2d3748;
+    }
+    .cta-wrapper {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 36px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .warning {
+      background: #fff8e1;
+      border: 1px solid #ffd54f;
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-size: 13px;
+      color: #7a5c00;
+      margin-bottom: 24px;
+    }
+    .warning strong { color: #5c4000; }
+    .footer {
+      background: #f7fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 24px 32px;
+      text-align: center;
+    }
+    .footer p {
+      font-size: 12px;
+      color: #a0aec0;
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #2d6a9f;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    {{-- En-tête --}}
+    <div class="header">
+      <h1>{{ brandName }}</h1>
+      <p>Plateforme de gestion pédagogique</p>
+    </div>
+
+    {{-- Corps --}}
+    <div class="body">
+      <p class="greeting">Bonjour {{ firstName }} {{ lastName }},</p>
+
+      <p class="text">
+        Un compte a été créé pour vous sur la plateforme <strong>{{ brandName }}</strong>.
+        Vous trouverez ci-dessous vos identifiants de connexion temporaires.
+      </p>
+
+      {{-- Identifiants --}}
+      <div class="credentials-box">
+        <p>
+          <strong>Email :</strong>
+          <span class="value">{{ email }}</span>
+        </p>
+        <p>
+          <strong>Mot de passe :</strong>
+          <span class="value">{{ password }}</span>
+        </p>
+      </div>
+
+      {{-- Avertissement --}}
+      <div class="warning">
+        <strong>⚠️ Important :</strong> Ce mot de passe est temporaire.
+        Vous devrez le modifier dès votre première connexion.
+      </div>
+
+      {{-- Bouton CTA --}}
+      <div class="cta-wrapper">
+        <a href="{{ loginUrl }}" class="cta-button">
+          Se connecter à {{ brandName }}
+        </a>
+      </div>
+
+      <p class="text">
+        Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :<br />
+        <a href="{{ loginUrl }}" style="color: #2d6a9f; font-size: 13px;">{{ loginUrl }}</a>
+      </p>
+    </div>
+
+    {{-- Pied de page --}}
+    <div class="footer">
+      <p>
+        Cet email vous a été envoyé automatiquement, merci de ne pas y répondre.<br />
+        © {{ new Date().getFullYear() }} {{ brandName }} · Tous droits réservés
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>

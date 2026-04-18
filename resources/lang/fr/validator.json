@@ -1,0 +1,30 @@
+{
+  "shared": {
+    "field_exists": "Ce champ existe déjà.",
+    "field_not_exists": "Ce champ n'existe pas."
+  },
+  "validator": {
+    "required": "Le champ {{ field }} est obligatoire.",
+    "string": "Le champ {{ field }} doit être une chaîne de caractères.",
+    "email": "Le champ {{ field }} doit être une adresse e-mail valide.",
+    "minLength": "Le champ {{ field }} doit contenir au moins {{ min }} caractères.",
+    "maxLength": "Le champ {{ field }} ne doit pas dépasser {{ max }} caractères.",
+    "confirmed": "La confirmation du champ {{ field }} ne correspond pas.",
+    "unique": "La valeur du champ {{ field }} est déjà utilisée.",
+    "exists": "La valeur sélectionnée pour {{ field }} est invalide.",
+    "boolean": "Le champ {{ field }} doit être vrai ou faux.",
+    "number": "Le champ {{ field }} doit être un nombre.",
+    "min": "Le champ {{ field }} doit être supérieur ou égal à {{ min }}.",
+    "max": "Le champ {{ field }} doit être inférieur ou égal à {{ max }}.",
+    "regex": "Le format du champ {{ field }} est invalide.",
+    "url": "Le champ {{ field }} doit être une URL valide.",
+    "enum": "La valeur du champ {{ field }} est invalide.",
+    "date": "Le champ {{ field }} doit être une date valide.",
+    "before": "Le champ {{ field }} doit être une date antérieure à {{ before }}.",
+    "after": "Le champ {{ field }} doit être une date ultérieure à {{ after }}.",
+    "file": {
+      "size": "Le fichier {{ field }} ne doit pas dépasser {{ size }}.",
+      "extname": "L'extension du fichier {{ field }} doit être : {{ extnames }}."
+    }
+  }
+}

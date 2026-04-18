@@ -1,24 +1,77 @@
-import { useState } from 'react'
-import { Head } from '@inertiajs/react'
+import { useState, useMemo } from 'react'
+import { Head, useForm, usePage, router } from '@inertiajs/react'
 import AdminLayout from '~/components/administration/AdminLayout'
 import { Plus, Pencil, Trash2, Search, X, Landmark } from 'lucide-react'
 
+export type Ministry = {
+  id: number
+  name: string
+  description: string
+  createdAt: string
+  updatedAt: string
+}
+
 export default function MinisteresIndex() {
+  const { ministries } = usePage<{ ministries: Ministry[] }>().props
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
+  const [currentMinistry, setCurrentMinistry] = useState<Ministry | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Données fictives (Frontend Only) pour simuler la base de données
-  const mockDepartments = [
-    { id: 1, name: 'Ministère d\'Intercession', description: 'Équipe dédiée à la prière, au jeûne et au soutien spirituel continu de l\'église.' },
-    { id: 2, name: 'Ministère de la Louange', description: 'Gestion de la chorale, des musiciens, chantres et de l\'adoration lors des cultes.' },
-    { id: 3, name: 'École du Dimanche', description: 'Enseignement biblique ludique et profond adapté aux enfants et adolescents.' },
-    { id: 4, name: 'Ministère de l\'Accueil', description: 'Prend en charge les nouveaux venus, le protocole et l\'orientation pendant les cultes.' }
-  ]
+  const { data, setData, post, put, processing, errors, reset } = useForm({
+    name: '',
+    description: '',
+  })
 
-  const filteredDepartments = mockDepartments.filter(dept => 
-    dept.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    dept.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredDepartments = useMemo(() => {
+    const list = ministries || []
+    return list.filter(dept => 
+      dept.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      dept.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }, [ministries, searchQuery])
+
+  const openCreateModal = () => {
+    setModalMode('create')
+    setCurrentMinistry(null)
+    reset()
+    setIsModalOpen(true)
+  }
+
+  const openEditModal = (ministry: Ministry) => {
+    setModalMode('edit')
+    setCurrentMinistry(ministry)
+    setData({
+      name: ministry.name,
+      description: ministry.description
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (modalMode === 'create') {
+      post('/administration/ministeres', {
+        onSuccess: () => {
+          setIsModalOpen(false)
+          reset()
+        }
+      })
+    } else {
+      put(`/administration/ministeres/${currentMinistry?.id}`, {
+        onSuccess: () => {
+          setIsModalOpen(false)
+          reset()
+        }
+      })
+    }
+  }
+
+  const handleDelete = (id: number) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce ministère ?')) {
+      router.delete(`/administration/ministeres/${id}`)
+    }
+  }
 
   return (
     <AdminLayout title="Gestion des Ministères">
@@ -30,11 +83,11 @@ export default function MinisteresIndex() {
             <Landmark className="w-8 h-8 text-brand-orange" />
             Ministères
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Gérez la liste des ministères et départements (données fictives Front-End).</p>
+          <p className="text-sm text-gray-500 mt-1">Gérez la liste officielle des ministères et départements de l'académie.</p>
         </div>
         
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={openCreateModal}
           className="flex items-center gap-2 bg-brand-black hover:bg-brand-orange text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-brand-orange/10 hover:shadow-brand-orange/30 group"
         >
           <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
@@ -79,13 +132,14 @@ export default function MinisteresIndex() {
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={() => openEditModal(dept)}
                         className="p-2 text-gray-400 hover:text-brand-orange hover:bg-orange-50 rounded-lg transition-colors"
                         title="Modifier"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button 
+                        onClick={() => handleDelete(dept.id)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Supprimer"
                       >
@@ -125,28 +179,34 @@ export default function MinisteresIndex() {
             
             <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
               <Landmark className="w-6 h-6 text-brand-orange" />
-              Nouveau Ministère
+              {modalMode === 'create' ? 'Nouveau Ministère' : 'Modifier le Ministère'}
             </h2>
             
-            <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }}>
+            <form className="space-y-5" onSubmit={handleSave}>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Nom du Ministère</label>
                 <input 
                   type="text" 
+                  value={data.name}
+                  onChange={e => setData('name', e.target.value)}
                   className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all bg-gray-50 hover:bg-gray-100/50 focus:bg-white"
                   placeholder="Ex: Ministère de la Famille"
                   required
                 />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Description / Mission</label>
                 <textarea 
                   rows={4}
+                  value={data.description}
+                  onChange={e => setData('description', e.target.value)}
                   className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all resize-none bg-gray-50 hover:bg-gray-100/50 focus:bg-white"
                   placeholder="Décrivez brièvement la mission principale de ce ministère..."
                   required
                 ></textarea>
+                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
               </div>
               
               <div className="pt-6 flex items-center justify-end gap-3 mt-8 border-t border-gray-100">
@@ -159,9 +219,10 @@ export default function MinisteresIndex() {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-6 py-3 bg-brand-black hover:bg-brand-orange text-white font-bold rounded-xl transition-colors shadow-md shadow-brand-orange/20"
+                  disabled={processing}
+                  className="px-6 py-3 bg-brand-black hover:bg-brand-orange text-white font-bold rounded-xl transition-colors shadow-md shadow-brand-orange/20 disabled:opacity-50"
                 >
-                  Sauvegarder
+                  {processing ? 'Enregistrement...' : 'Sauvegarder'}
                 </button>
               </div>
             </form>

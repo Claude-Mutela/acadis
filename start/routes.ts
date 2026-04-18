@@ -25,9 +25,16 @@ router.on('/calendrier').renderInertia('calendrier', {}).as('calendrier')
 router.on('/contact').renderInertia('contact', {}).as('contact')
 
 // Administration
+// Utilisateurs
 router.on('/administration/dashboard').renderInertia('administration/dashboard', {}).as('admin.dashboard')
-router.on('/administration/utilisateurs').renderInertia('administration/users/index', {}).as('admin.users.index')
-router.on('/administration/ministeres').renderInertia('administration/ministeres/index', {}).as('admin.ministeres.index')
+router.get('/administration/utilisateurs', [controllers.Users, 'index']).as('admin.users.index')
+router.post('/administration/utilisateurs', [controllers.Users, 'store']).as('admin.users.store')
+router.put('/administration/utilisateurs/:id', [controllers.Users, 'update']).as('admin.users.update')
+router.delete('/administration/utilisateurs/:id', [controllers.Users, 'destroy']).as('admin.users.destroy')
+router.get('/administration/ministeres', [controllers.Ministries, 'index']).as('admin.ministeres.index')
+router.post('/administration/ministeres', [controllers.Ministries, 'store']).as('admin.ministeres.store')
+router.put('/administration/ministeres/:id', [controllers.Ministries, 'update']).as('admin.ministeres.update')
+router.delete('/administration/ministeres/:id', [controllers.Ministries, 'destroy']).as('admin.ministeres.destroy')
 router.on('/administration/formateurs').renderInertia('administration/formateurs/index', {}).as('admin.formateurs.index')
 router.on('/administration/etudiants').renderInertia('administration/etudiants/index', {}).as('admin.etudiants.index')
 router.on('/administration/paiements').renderInertia('administration/paiements/index', {}).as('admin.paiements.index')
