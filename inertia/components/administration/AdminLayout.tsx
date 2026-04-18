@@ -12,7 +12,8 @@ import {
   Bell,
   Search,
   ChevronDown,
-  Landmark
+  Landmark,
+  Layers
 } from 'lucide-react'
 
 const navigation = [
@@ -20,6 +21,7 @@ const navigation = [
   { name: 'Utilisateurs', href: '/administration/utilisateurs', icon: Users },
   { name: 'Étudiants', href: '/administration/etudiants', icon: Users },
   { name: 'Ministères', href: '/administration/ministeres', icon: Landmark },
+  { name: 'Cohortes', href: '/administration/cohortes', icon: Layers },
   { name: 'Formateurs', href: '/administration/formateurs', icon: GraduationCap },
   { name: 'Programmes', href: '/administration/programmes', icon: BookOpen },
   { name: 'Paiements', href: '/administration/paiements', icon: CreditCard },
