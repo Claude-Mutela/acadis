@@ -46,8 +46,11 @@ router.delete('/administration/formateurs/:id', [controllers.Trainers, 'destroy'
 router.on('/administration/etudiants').renderInertia('administration/etudiants/index', {}).as('admin.etudiants.index')
 // Paiements
 router.on('/administration/paiements').renderInertia('administration/paiements/index', {}).as('admin.paiements.index')
-// Programmes
-router.on('/administration/programmes').renderInertia('administration/programmes/index', {}).as('admin.programmes.index')
+// Programmes & Catégories
+router.get('/administration/programmes', [controllers.Programmes, 'index']).as('admin.programmes.index')
+router.post('/administration/programmes/categories', [controllers.ProgramCategories, 'store']).as('admin.programmes.categories.store')
+router.put('/administration/programmes/categories/:id', [controllers.ProgramCategories, 'update']).as('admin.programmes.categories.update')
+router.delete('/administration/programmes/categories/:id', [controllers.ProgramCategories, 'destroy']).as('admin.programmes.categories.destroy')
 // Planning
 router.on('/administration/planning').renderInertia('administration/planning/index', {}).as('admin.planning.index')
 // Profil

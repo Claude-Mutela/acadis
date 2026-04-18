@@ -1,12 +1,21 @@
 import { ProgramSchema } from '#database/schema'
-import { belongsTo, hasMany, manyToMany } from '@adonisjs/lucid/orm'
+import { belongsTo, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
+import ProgramCategory from './program_category.js'
 import Cohort from './cohort.js'
 import Module from './module.js'
 import Manuel from './manuel.js'
 import Trainer from './trainer.js'
 
 export default class Program extends ProgramSchema {
+    @column()
+    declare categoryId: number | null
+
+    @belongsTo(() => ProgramCategory, {
+      foreignKey: 'categoryId',
+    })
+    declare category: BelongsTo<typeof ProgramCategory>
+
     @belongsTo(() => Trainer)
     declare trainer: BelongsTo<typeof Trainer>
 
