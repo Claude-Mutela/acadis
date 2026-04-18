@@ -22,6 +22,7 @@ export default function CohortesIndex() {
 
   const { data, setData, post, put, processing, errors, reset } = useForm({
     name: '',
+    slug: '',
     startDate: '',
     endDate: '',
   })
@@ -50,6 +51,7 @@ export default function CohortesIndex() {
 
     setData({
       name: cohort.name,
+      slug: cohort.slug,
       startDate: start,
       endDate: end
     })
@@ -205,12 +207,34 @@ export default function CohortesIndex() {
                 <input 
                   type="text" 
                   value={data.name}
-                  onChange={e => setData('name', e.target.value)}
+                  onChange={e => {
+                    const name = e.target.value
+                    const slug = name
+                      .toLowerCase()
+                      .trim()
+                      .replace(/[^\w\s-]/g, '')
+                      .replace(/[\s_-]+/g, '-')
+                      .replace(/^-+|-+$/g, '')
+                    
+                    setData(data => ({ ...data, name, slug }))
+                  }}
                   className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all bg-gray-50 hover:bg-gray-100/50 focus:bg-white"
                   placeholder="Ex: Cohorte 2024 - Session A"
                   required
                 />
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Slug (Automatique)</label>
+                <input 
+                  type="text" 
+                  value={data.slug}
+                  readOnly
+                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
+                  placeholder="nom-de-la-cohorte"
+                />
+                <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">Généré à partir du nom</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
