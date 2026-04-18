@@ -37,7 +37,11 @@ router.post('/administration/ministeres', [controllers.Ministries, 'store']).as(
 router.put('/administration/ministeres/:id', [controllers.Ministries, 'update']).as('admin.ministeres.update')
 router.delete('/administration/ministeres/:id', [controllers.Ministries, 'destroy']).as('admin.ministeres.destroy')
 // Formateurs
-router.on('/administration/formateurs').renderInertia('administration/formateurs/index', {}).as('admin.formateurs.index')
+// Formateurs
+router.get('/administration/formateurs', [controllers.Trainers, 'index']).as('admin.formateurs.index')
+router.post('/administration/formateurs', [controllers.Trainers, 'store']).as('admin.formateurs.store')
+router.put('/administration/formateurs/:id', [controllers.Trainers, 'update']).as('admin.formateurs.update')
+router.delete('/administration/formateurs/:id', [controllers.Trainers, 'destroy']).as('admin.formateurs.destroy')
 // Etudiants
 router.on('/administration/etudiants').renderInertia('administration/etudiants/index', {}).as('admin.etudiants.index')
 // Paiements
@@ -49,7 +53,10 @@ router.on('/administration/planning').renderInertia('administration/planning/ind
 // Profil
 router.on('/administration/profil').renderInertia('administration/profil', {}).as('admin.profil')
 // Cohortes
-router.on('/administration/cohortes').renderInertia('administration/cohortes/index', {}).as('admin.cohortes.index')
+router.get('/administration/cohortes', [controllers.Cohorts, 'index']).as('admin.cohortes.index')
+router.post('/administration/cohortes', [controllers.Cohorts, 'store']).as('admin.cohortes.store')
+router.put('/administration/cohortes/:id', [controllers.Cohorts, 'update']).as('admin.cohortes.update')
+router.delete('/administration/cohortes/:id', [controllers.Cohorts, 'destroy']).as('admin.cohortes.destroy')
 
 // Espace Apprenant (Étudiant)
 router.on('/etudiant/dashboard').renderInertia('etudiant/dashboard', {}).as('student.dashboard')
