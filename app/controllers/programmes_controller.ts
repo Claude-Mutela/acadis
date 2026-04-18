@@ -1,15 +1,136 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Program from '#models/program'
 import ProgramCategory from '#models/program_category'
+import Trainer from '#models/trainer'
+import { createProgramValidator, updateProgramValidator } from '#validators/program'
+import app from '@adonisjs/core/services/app'
+import string from '@adonisjs/core/helpers/string'
+import fs from 'node:fs'
 
 export default class ProgrammesController {
   async index({ inertia }: HttpContext) {
-    const programs = await Program.query().preload('category').orderBy('createdAt', 'desc')
+    const programs = await Program.query()
+      .preload('category')
+      .preload('trainer', (q) => q.preload('user'))
+      .orderBy('createdAt', 'desc')
+
     const categories = await ProgramCategory.query().orderBy('name', 'asc')
+    const trainers = await Trainer.query().preload('user')
     
     return inertia.render('administration/programmes/index', { 
       programs, 
-      categories 
+      categories,
+      trainers
     })
+  }
+
+  async store({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(createProgramValidator)
+    
+    // Slug generation
+    const slug = string.slug(payload.name).toLowerCase()
+
+    // Handle Image
+    let coverImagePath: string | null = null
+    const image = request.file('coverImage')
+    
+    if (image) {
+      const fileName = `${Date.now()}-${image.clientName}`
+      await image.move(app.makePath('public/uploads/programs'), {
+        name: fileName
+      })
+      coverImagePath = `/uploads/programs/${fileName}`
+    }
+
+    const { coverImage, objectives, outputProfile, ...data } = payload
+
+    try {
+      await Program.create({
+        ...data,
+        description: data.description ?? '',
+        presentation: data.presentation ?? '',
+        duration: data.duration ?? '',
+        slug,
+        coverImage: coverImagePath || undefined,
+        objectives: JSON.stringify(objectives || []),
+        outputProfile: JSON.stringify(outputProfile || [])
+      })
+
+      session.flash('success', 'Programme créé avec succès !')
+      return response.redirect().back()
+    } catch (error) {
+      session.flash('error', "Erreur lors de l'enregistrement en base de données : " + error.message)
+      return response.redirect().back()
+    }
+  }
+
+  async update({ params, request, response, session }: HttpContext) {
+    const program = await Program.findOrFail(params.id)
+    const payload = await request.validateUsing(updateProgramValidator)
+
+    // Handle Image
+    const image = request.file('coverImage')
+    if (image) {
+      // Delete old image if exists
+      if (program.coverImage) {
+        const oldPath = app.makePath('public', program.coverImage.substring(1))
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath)
+        }
+      }
+
+      const fileName = `${Date.now()}-${image.clientName}`
+      await image.move(app.makePath('public/uploads/programs'), {
+        name: fileName
+      })
+      program.coverImage = `/uploads/programs/${fileName}`
+    }
+
+    const { coverImage: _unused, objectives, outputProfile, ...data } = payload
+
+    // Update fields
+    if (data.name) {
+      program.name = data.name
+      program.slug = string.slug(data.name).toLowerCase()
+    }
+    program.categoryId = data.categoryId ?? program.categoryId
+    program.trainerId = data.trainerId ?? program.trainerId
+    program.description = data.description ?? program.description ?? ''
+    program.presentation = data.presentation ?? program.presentation ?? ''
+    program.duration = data.duration ?? program.duration ?? ''
+    program.status = data.status ?? program.status
+    
+    if (objectives) {
+      program.objectives = JSON.stringify(objectives)
+    }
+    if (outputProfile) {
+      program.outputProfile = JSON.stringify(outputProfile)
+    }
+
+    try {
+      await program.save()
+      session.flash('success', 'Programme mis à jour avec succès !')
+      return response.redirect().back()
+    } catch (error) {
+      session.flash('error', "Erreur lors de la mise à jour : " + error.message)
+      return response.redirect().back()
+    }
+  }
+
+  async destroy({ params, response, session }: HttpContext) {
+    const program = await Program.findOrFail(params.id)
+    
+    // Delete image file
+    if (program.coverImage) {
+      const filePath = app.makePath('public', program.coverImage.substring(1))
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+      }
+    }
+
+    await program.delete()
+
+    session.flash('success', 'Programme supprimé avec succès !')
+    return response.redirect().back()
   }
 }

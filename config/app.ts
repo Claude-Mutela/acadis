@@ -24,7 +24,7 @@ export const http = defineConfig({
    * This lets HTML forms target PUT/PATCH/DELETE routes while still
    * submitting with POST.
    */
-  allowMethodSpoofing: false,
+  allowMethodSpoofing: true,
 
   /**
    * Enabling async local storage will let you access HTTP context

@@ -48,6 +48,10 @@ router.on('/administration/etudiants').renderInertia('administration/etudiants/i
 router.on('/administration/paiements').renderInertia('administration/paiements/index', {}).as('admin.paiements.index')
 // Programmes & Catégories
 router.get('/administration/programmes', [controllers.Programmes, 'index']).as('admin.programmes.index')
+router.post('/administration/programmes', [controllers.Programmes, 'store']).as('admin.programmes.store')
+router.put('/administration/programmes/:id', [controllers.Programmes, 'update']).as('admin.programmes.update')
+router.delete('/administration/programmes/:id', [controllers.Programmes, 'destroy']).as('admin.programmes.destroy')
+
 router.post('/administration/programmes/categories', [controllers.ProgramCategories, 'store']).as('admin.programmes.categories.store')
 router.put('/administration/programmes/categories/:id', [controllers.ProgramCategories, 'update']).as('admin.programmes.categories.update')
 router.delete('/administration/programmes/categories/:id', [controllers.ProgramCategories, 'destroy']).as('admin.programmes.categories.destroy')

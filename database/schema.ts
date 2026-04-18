@@ -259,8 +259,10 @@ export class PaymentSchema extends BaseModel {
 }
 
 export class ProgramSchema extends BaseModel {
-  static $columns = ['coverImage', 'createdAt', 'description', 'duration', 'id', 'name', 'objectives', 'outputProfile', 'presentation', 'slug', 'status', 'trainerId', 'updatedAt'] as const
+  static $columns = ['categoryId', 'coverImage', 'createdAt', 'description', 'duration', 'id', 'name', 'objectives', 'outputProfile', 'presentation', 'slug', 'status', 'trainerId', 'updatedAt'] as const
   $columns = ProgramSchema.$columns
+  @column()
+  declare categoryId: number | null
   @column()
   declare coverImage: string | null
   @column.dateTime({ autoCreate: true })
@@ -285,6 +287,21 @@ export class ProgramSchema extends BaseModel {
   declare status: string
   @column()
   declare trainerId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class ProgramCategorySchema extends BaseModel {
+  static $columns = ['createdAt', 'description', 'id', 'name', 'updatedAt'] as const
+  $columns = ProgramCategorySchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare description: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }
