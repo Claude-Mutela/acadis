@@ -617,43 +617,63 @@ export default function ProgrammesIndex() {
       {/* MODALE : CATEGORIES */}
       {isCatModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsCatModalOpen(false)} />
-          <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
-            <div className="px-10 py-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <h3 className="text-xl font-black text-gray-900 flex items-center gap-3 italic"><FolderTree className="w-7 h-7 text-orange" /> GÉRER LES CATÉGORIES</h3>
-              <button onClick={() => setIsCatModalOpen(false)} className="text-gray-400 hover:text-gray-900 bg-white p-2 rounded-full shadow-sm border border-gray-100"><X className="w-6 h-6" /></button>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsCatModalOpen(false)} />
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
+            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <FolderTree className="w-6 h-6 text-orange" />
+                DÉFINITION DES CATÉGORIES
+              </h3>
+              <button onClick={() => setIsCatModalOpen(false)} className="text-gray-400 hover:text-red-500 bg-white p-2 rounded-full shadow-sm transition-colors border border-gray-100">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="overflow-y-auto flex-1 p-10 space-y-12">
-              <div className="bg-gray-50/80 p-8 rounded-[2.5rem] border border-gray-100 shadow-inner">
-                <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans italic">{editingCategory ? 'MODIFICATION UNITÉ' : 'NOUVELLE CATÉGORIE'}</h4>
-                <form onSubmit={handleSaveCat} className="space-y-5">
-                  <div className="relative group">
-                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-orange transition-colors"><Plus className="w-4 h-4" /></span>
-                    <input type="text" required placeholder="Intitulé de la catégorie" value={categoryForm.data.name} onChange={e => categoryForm.setData('name', e.target.value)} className="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all" />
-                  </div>
-                  <input type="text" placeholder="Description courte (optionnelle)" value={categoryForm.data.description} onChange={e => categoryForm.setData('description', e.target.value)} className="w-full px-8 py-4 bg-white border border-gray-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all italic" />
-                  <div className="flex gap-4 pt-2">
-                    {editingCategory && <button type="button" onClick={() => {setEditingCategory(null); categoryForm.reset();}} className="flex-1 py-4 bg-white border border-gray-200 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm italic">Annuler</button>}
-                    <button type="submit" disabled={categoryForm.processing} className="flex-2 py-4 bg-black text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl hover:bg-orange transition-all shadow-xl shadow-orange/10">
-                      {categoryForm.processing ? '...' : (editingCategory ? 'METTRE À JOUR' : 'AJOUTER LA UNITÉ')}
+            <div className="overflow-y-auto flex-1 p-8 space-y-10">
+              <div className="bg-gray-50/50 p-8 rounded-[2rem] border border-gray-100 shadow-inner">
+                <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans">{editingCategory ? 'Modification catégorie' : 'Nouvelle catégorie'}</h4>
+                <form onSubmit={handleSaveCat} className="space-y-4">
+                   <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Intitulé</label>
+                        <input type="text" required placeholder="Ex: Informatique, Management..." value={categoryForm.data.name} onChange={e => categoryForm.setData('name', e.target.value)} className="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Description</label>
+                        <input type="text" placeholder="Description courte (optionnelle)" value={categoryForm.data.description} onChange={e => categoryForm.setData('description', e.target.value)} className="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all italic" />
+                      </div>
+                   </div>
+                   <div className="flex gap-4 pt-2">
+                    {editingCategory && (
+                      <button type="button" onClick={() => {setEditingCategory(null); categoryForm.reset();}} className="flex-1 py-4 bg-gray-100 text-gray-500 font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-gray-200 transition-all italic">
+                        Annuler
+                      </button>
+                    )}
+                    <button type="submit" disabled={categoryForm.processing} className="flex-[2] py-4 bg-black text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-xl hover:bg-orange transition-all disabled:opacity-50">
+                      {categoryForm.processing ? 'SYNCHRONISATION...' : (editingCategory ? 'METTRE À JOUR' : 'Valider la catégorie')}
                     </button>
                   </div>
                 </form>
               </div>
 
-              <div>
-                <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.5em] ml-4 italic">Index des catégories</h4>
-                <div className="bg-white rounded-[2.5rem] border border-gray-50 overflow-hidden divide-y divide-gray-50 shadow-sm transition-all">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between ml-2">
+                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Index des rubriques</h4>
+                   <span className="bg-gray-100 px-3 py-1 rounded-full text-[9px] font-black text-gray-400">Total: {categories.length}</span>
+                </div>
+                <div className="space-y-4">
                   {categories.map(cat => (
-                    <div key={cat.id} className="flex items-center justify-between p-8 bg-white group hover:bg-orange-50/20 transition-all">
-                      <div>
-                        <div className="font-black text-gray-900 group-hover:text-orange transition-colors italic">{cat.name}</div>
-                        <div className="text-[11px] text-gray-400 mt-1 font-bold italic">{cat.description || '— Aucun détail —'}</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => {setEditingCategory(cat); categoryForm.setData({name: cat.name, description: cat.description || ''})}} className="p-3 text-gray-300 hover:text-blue-600 hover:bg-white rounded-2xl transition-all shadow-none hover:shadow-xl"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => promptDeleteProp('cat', cat.id)} className="p-3 text-gray-300 hover:text-red-500 hover:bg-white rounded-2xl transition-all shadow-none hover:shadow-xl"><Trash2 className="w-4 h-4" /></button>
-                      </div>
+                    <div key={cat.id} className="group p-5 bg-white border border-gray-100 rounded-[2rem] hover:shadow-xl hover:shadow-gray-200/50 transition-all flex items-center gap-5">
+                        <div className="w-12 h-12 bg-gray-50 text-gray-400 group-hover:bg-orange group-hover:text-white rounded-2xl flex items-center justify-center transition-all">
+                           <FolderTree className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-black text-gray-900 group-hover:text-orange transition-colors">{cat.name}</div>
+                          <div className="text-[10px] text-gray-400 mt-1 italic font-medium">{cat.description || '— Aucun détail —'}</div>
+                        </div>
+                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                          <button onClick={() => {setEditingCategory(cat); categoryForm.setData({name: cat.name, description: cat.description || ''})}} className="p-2 bg-white text-gray-400 hover:text-blue-600 rounded-xl shadow-sm border border-gray-100 transition-all"><Edit2 className="w-4 h-4" /></button>
+                          <button onClick={() => promptDeleteProp('cat', cat.id)} className="p-2 bg-white text-gray-400 hover:text-red-500 rounded-xl shadow-sm border border-gray-100 transition-all"><Trash2 className="w-4 h-4" /></button>
+                        </div>
                     </div>
                   ))}
                 </div>
