@@ -3,16 +3,22 @@ import { Head, usePage, useForm, router } from '@inertiajs/react'
 import AdminLayout from '~/components/administration/AdminLayout'
 import { 
   Search, Plus, Edit2, Trash2, X, FolderTree, BookOpen, Clock, 
-  Target, Award, Image as ImageIcon, Camera, User as UserIcon, AlertCircle
+  Target, Award, Image as ImageIcon, Camera, User as UserIcon, 
+  AlertCircle, LayoutList, FileText, Layers, Hash, MoveHorizontal, ChevronRight, Save, UploadCloud
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type User = { id: number, firstName: string, lastName: string, email: string }
 type Trainer = { id: number, userId: number, user: User }
 type Categorie = { id: number, name: string, description: string | null }
+type Cohort = { id: number, name: string }
+type BaseModule = { id: number, title: string, description: string, order: number, programId: number }
+type BaseManuel = { id: number, title: string, description: string, price: number, coverImage: string | null, fileUrl: string, isPublished: boolean, programId: number }
+
 type Programme = {
   id: number
   name: string
+  slug: string
   categoryId: number | null
   trainerId: number
   description: string
@@ -24,13 +30,17 @@ type Programme = {
   coverImage: string | null
   category?: Categorie
   trainer?: Trainer
+  cohorts?: Cohort[]
+  modules?: BaseModule[]
+  manuels?: BaseManuel[]
 }
 
 export default function ProgrammesIndex() {
-  const { programs, categories, trainers } = usePage<{ 
+  const { programs, categories, trainers, cohorts } = usePage<{ 
     programs: Programme[], 
     categories: Categorie[],
-    trainers: Trainer[]
+    trainers: Trainer[],
+    cohorts: Cohort[]
   }>().props
   
   const [searchProg, setSearchProg] = useState('')
@@ -38,6 +48,37 @@ export default function ProgrammesIndex() {
   const [isProgModalOpen, setIsProgModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'cat' | 'prog', id: number } | null>(null)
+
+  // Modales spécifiques
+  const [activeProgForModules, setActiveProgForModules] = useState<Programme | null>(null)
+  const [activeProgForManuels, setActiveProgForManuels] = useState<Programme | null>(null)
+
+  // État local pour le formulaire de manuel (Stub)
+  const [manuelFormData, setManuelFormData] = useState({
+    title: '',
+    price: '',
+    description: '',
+    isPublished: false,
+    coverFile: null as File | null,
+    pdfFile: null as File | null
+  })
+  const [manuelCoverPreview, setManuelCoverPreview] = useState<string | null>(null)
+  const manualCoverInputRef = useRef<HTMLInputElement>(null)
+  const manualPdfInputRef = useRef<HTMLInputElement>(null)
+
+  const handleManuelFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'cover' | 'pdf') => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (type === 'cover') {
+      setManuelFormData(prev => ({ ...prev, coverFile: file }))
+      const reader = new FileReader()
+      reader.onloadend = () => setManuelCoverPreview(reader.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setManuelFormData(prev => ({ ...prev, pdfFile: file }))
+    }
+  }
 
   // ── Logic: Categories ──────────────────────────────────────────────────────
   const [editingCategory, setEditingCategory] = useState<Categorie | null>(null)
@@ -63,12 +104,15 @@ export default function ProgrammesIndex() {
   const [progMode, setProgMode] = useState<'create' | 'edit'>('create')
   const [currentProgId, setCurrentProgId] = useState<number | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [autoSlug, setAutoSlug] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const programForm = useForm<{
     name: string
+    slug: string
     categoryId: number | null
     trainerId: number | ''
+    cohortId: number | ''
     description: string
     presentation: string
     duration: string
@@ -78,8 +122,10 @@ export default function ProgrammesIndex() {
     coverImage: File | null
   }>({
     name: '',
+    slug: '',
     categoryId: categories[0]?.id || null,
     trainerId: trainers[0]?.id || '',
+    cohortId: cohorts[0]?.id || '',
     description: '',
     presentation: '',
     duration: '',
@@ -89,12 +135,15 @@ export default function ProgrammesIndex() {
     coverImage: null
   })
 
-  // Synchronisation forcée si trainers change
   useEffect(() => {
-    if (progMode === 'create' && !programForm.data.trainerId && trainers.length > 0) {
-      programForm.setData('trainerId', trainers[0].id)
+    if (autoSlug && progMode === 'create') {
+      const gSlug = programForm.data.name
+        .toLowerCase()
+        .replace(/[^\w ]+/g, '')
+        .replace(/ +/g, '-')
+      programForm.setData('slug', gSlug)
     }
-  }, [trainers])
+  }, [programForm.data.name])
 
   const parseJsonArray = (data: any): string[] => {
     if (Array.isArray(data)) return data
@@ -104,13 +153,16 @@ export default function ProgrammesIndex() {
   const openProgModal = (prog?: Programme) => {
     setImagePreview(prog?.coverImage || null)
     programForm.clearErrors()
+    setAutoSlug(prog ? false : true)
     if (prog) {
       setProgMode('edit')
       setCurrentProgId(prog.id)
       programForm.setData({
         name: prog.name,
+        slug: prog.slug,
         categoryId: prog.categoryId,
         trainerId: prog.trainerId,
+        cohortId: prog.cohorts?.[0]?.id || '',
         description: prog.description,
         presentation: prog.presentation,
         duration: prog.duration,
@@ -127,21 +179,12 @@ export default function ProgrammesIndex() {
         ...programForm.data,
         categoryId: categories[0]?.id || null,
         trainerId: trainers[0]?.id || '',
+        cohortId: cohorts[0]?.id || '',
         outputProfile: [''],
         objectives: ['']
       })
     }
     setIsProgModalOpen(true)
-  }
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      programForm.setData('coverImage', file)
-      const reader = new FileReader()
-      reader.onloadend = () => setImagePreview(reader.result as string)
-      reader.readAsDataURL(file)
-    }
   }
 
   const handleSaveProg = (e: React.FormEvent) => {
@@ -156,6 +199,16 @@ export default function ProgrammesIndex() {
         onSuccess: () => setIsProgModalOpen(false),
         forceFormData: true
       })
+    }
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      programForm.setData('coverImage', file)
+      const reader = new FileReader()
+      reader.onloadend = () => setImagePreview(reader.result as string)
+      reader.readAsDataURL(file)
     }
   }
 
@@ -198,252 +251,216 @@ export default function ProgrammesIndex() {
 
   return (
     <AdminLayout title="Gestion du Catalogue">
-      <Head title="Programmes - Admin" />
+      <Head title="Programmes Administration — ACADIS" />
       
+      {/* 1. Header de Page */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 uppercase tracking-tighter italic">Programmes</h1>
-          <p className="text-gray-500 mt-1 font-medium">Conception et supervision ingénierie.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">Programmes</h1>
+          <p className="text-gray-500 mt-1 font-medium italic">Gérez les cursus de formation et leurs ressources pédagogiques.</p>
         </div>
         <div className="flex gap-3">
           <button 
             onClick={() => setIsCatModalOpen(true)}
-            className="flex items-center gap-2 bg-gray-100/80 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-2xl text-sm transition-all shadow-sm border border-gray-200/50"
+            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-sm border border-gray-200"
           >
             <FolderTree className="w-4 h-4" />
             Catégories
           </button>
           <button 
             onClick={() => openProgModal()}
-            className="flex items-center gap-2 bg-brand-black hover:bg-brand-orange text-white font-bold py-2.5 px-6 rounded-2xl text-sm shadow-xl shadow-brand-black/10 transition-all hover:-translate-y-0.5"
+            className="flex items-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5"
           >
-            <Plus className="w-5 h-5" />
-            Nouveau Catalogue
+            <Plus className="w-4 h-4" />
+            Nouveau Programme
           </button>
         </div>
       </div>
 
-      <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="h-5 w-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* 2. Barre de Recherche */}
+      <div className="bg-white p-4 rounded-[1.5rem] shadow-sm border border-gray-100 mb-6 flex gap-4">
+        <div className="relative flex-1">
+          <Search className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
-            type="text" placeholder="Filtrer par nom, catégorie, formateur..."
+            type="text" placeholder="Rechercher un cours..."
             value={searchProg} onChange={e => setSearchProg(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-orange focus:bg-white outline-none transition-all"
+            className="block w-full pl-10 pr-3 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-brand-black/5 border border-gray-100 overflow-hidden">
+      {/* 3. Tableau des Programmes */}
+      <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100 uppercase text-[10px] font-black text-gray-400 tracking-[0.2em]">
-                <th className="px-8 py-6">Aperçu</th>
-                <th className="px-8 py-6">Programme / Expert</th>
-                <th className="px-8 py-6">Catégorie</th>
-                <th className="px-8 py-6">Statut</th>
-                <th className="px-8 py-6 text-right">Gestion</th>
+              <tr className="bg-gray-50 border-b border-gray-100 uppercase text-[10px] font-black text-gray-400 tracking-[0.2em]">
+                <th className="px-6 py-5">Visuel</th>
+                <th className="px-6 py-5">Cursus Pédagogique</th>
+                <th className="px-6 py-5">Cohorte / Cat.</th>
+                <th className="px-6 py-5">Pédagogie</th>
+                <th className="px-6 py-5 text-right">Pilotage</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filteredProgrammes.length > 0 ? filteredProgrammes.map(prog => (
                 <tr key={prog.id} className="hover:bg-orange-50/10 transition-colors group">
-                  <td className="px-8 py-5">
-                    <div className="w-20 h-12 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm transition-transform group-hover:scale-105">
+                  <td className="px-6 py-4">
+                    <div className="w-16 h-10 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm relative group/img">
                       {prog.coverImage ? (
-                        <img src={prog.coverImage} className="w-full h-full object-cover" />
+                        <img src={prog.coverImage} className="w-full h-full object-cover" alt="" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon className="w-5 h-5" /></div>
                       )}
                     </div>
                   </td>
-                  <td className="px-8 py-5">
-                    <div className="font-black text-gray-900 group-hover:text-brand-orange transition-colors">{prog.name}</div>
-                    <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-2 font-bold uppercase tracking-wider">
-                      <UserIcon className="w-3 h-3" />
-                      {prog.trainer?.user ? `${prog.trainer.user.firstName} ${prog.trainer.user.lastName}` : 'Expert non assigné'}
+                  <td className="px-6 py-4">
+                    <div className="font-bold text-gray-900 group-hover:text-orange transition-colors">{prog.name}</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1.5 font-bold uppercase tracking-wider">
+                       {prog.slug}
                     </div>
                   </td>
-                  <td className="px-8 py-5">
-                    <span className="inline-flex px-3 py-1 rounded-full bg-orange-50 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-orange-100">
-                      {prog.category?.name || 'Général'}
-                    </span>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[11px] font-bold text-gray-700">{prog.cohorts?.[0]?.name || 'Non assigné'}</span>
+                      <span className="text-[10px] text-orange font-black uppercase tracking-widest">{prog.category?.name || 'GÉNÉRAL'}</span>
+                    </div>
                   </td>
-                  <td className="px-8 py-5">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center w-fit gap-2 border ${prog.status === 'active' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${prog.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      {prog.status === 'active' ? 'Actif' : 'Brouillon'}
-                    </span>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button onClick={() => setActiveProgForModules(prog)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-orange-100 hover:text-orange text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all">
+                        <Layers className="w-3.5 h-3.5" />
+                        Modules
+                      </button>
+                      <button onClick={() => setActiveProgForManuels(prog)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-blue-100 hover:text-blue-600 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all">
+                        <FileText className="w-3.5 h-3.5" />
+                        Manuels
+                      </button>
+                    </div>
                   </td>
-                  <td className="px-8 py-5 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                      <button onClick={() => openProgModal(prog)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => promptDeleteProp('prog', prog.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => openProgModal(prog)} className="p-2 bg-white text-gray-400 hover:text-blue-600 rounded-xl shadow-sm border border-gray-100 transition-all"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={() => promptDeleteProp('prog', prog.id)} className="p-2 bg-white text-gray-400 hover:text-red-500 rounded-xl shadow-sm border border-gray-100 transition-all"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={5} className="px-8 py-16 text-center text-gray-400 font-black uppercase tracking-widest italic text-xs">Aucun élément dans le catalogue</td></tr>
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-bold italic">Aucun programme n'a été trouvé.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* MODALE : PROGRAMME */}
+      {/* MODALE : PROGRAMME (CRUD) */}
       {isProgModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-brand-black/60 backdrop-blur-md" onClick={() => setIsProgModalOpen(false)} />
-          <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-fade-in-up">
-            <div className="px-10 py-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <div>
-                <h3 className="text-2xl font-black text-gray-900 flex items-center gap-3 italic">
-                  <BookOpen className="w-7 h-7 text-brand-orange" />
-                  {progMode === 'create' ? 'NOUVELLE FICHE PROGRAMME' : 'MODIFICATION PROGRAMME'}
-                </h3>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em] mt-2">Expertise et Ingénierie de Formation</p>
-              </div>
-              <button onClick={() => setIsProgModalOpen(false)} className="text-gray-400 hover:text-gray-900 bg-white p-3 rounded-full shadow-sm hover:shadow-xl transition-all"><X className="w-6 h-6" /></button>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsProgModalOpen(false)} />
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-fade-in-up">
+            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <BookOpen className="w-6 h-6 text-orange" />
+                {progMode === 'create' ? 'Ajout d\'un cursus' : 'Édition du programme'}
+              </h3>
+              <button onClick={() => setIsProgModalOpen(false)} className="text-gray-400 hover:text-red-500 bg-white p-2 rounded-full shadow-sm transition-colors border border-gray-100">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleSaveProg} className="overflow-y-auto flex-1 p-10 space-y-12">
-              
-              {/* Message d'erreur global */}
-              {Object.keys(programForm.errors).length > 0 && (
-                <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold">
-                   <AlertCircle className="w-5 h-5" />
-                   Veuillez corriger les erreurs ci-dessous pour continuer.
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                {/* Image & Main Info */}
-                <div className="lg:col-span-4 space-y-8">
-                   <div>
-                     <div 
-                       onClick={() => fileInputRef.current?.click()}
-                       className={`aspect-[4/3] rounded-[2.5rem] bg-gray-50 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-brand-orange hover:bg-orange-50/30 transition-all group overflow-hidden relative shadow-inner ${programForm.errors.coverImage ? 'border-red-300' : 'border-gray-200'}`}
-                     >
-                        {imagePreview ? (
-                          <>
-                            <img src={imagePreview} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-10 h-10 text-white" /></div>
-                          </>
-                        ) : (
-                          <>
-                            <Camera className="w-10 h-10 text-gray-200 group-hover:text-brand-orange transition-colors" />
-                            <span className="text-[10px] font-black text-gray-300 mt-3 uppercase tracking-widest">Couverture</span>
-                          </>
-                        )}
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
-                     </div>
-                     {programForm.errors.coverImage && <p className="text-[10px] text-red-500 font-bold mt-2 ml-4 uppercase">{programForm.errors.coverImage}</p>}
+            <form onSubmit={handleSaveProg} className="overflow-y-auto flex-1 p-8 space-y-10">
+              <div className="grid grid-cols-1 lg:grid-cols-11 gap-8">
+                {/* Lateral: Image & Settings */}
+                <div className="lg:col-span-3 space-y-6">
+                   <div 
+                     onClick={() => fileInputRef.current?.click()}
+                     className={`aspect-video rounded-3xl bg-gray-50 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-orange hover:bg-orange-50/50 transition-all group overflow-hidden relative ${programForm.errors.coverImage ? 'border-red-300' : 'border-gray-200'}`}
+                   >
+                      {imagePreview ? (
+                        <img src={imagePreview} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <div className="text-center">
+                          <ImageIcon className="w-8 h-8 text-gray-300 mx-auto group-hover:text-orange transition-colors" />
+                          <span className="text-[9px] font-black text-gray-400 mt-2 block uppercase tracking-tighter">Couverture</span>
+                        </div>
+                      )}
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
                    </div>
 
-                   <div className="space-y-6">
+                   <div className="space-y-4">
                       <div>
-                        <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest ml-1">Responsable Pedagogique</label>
-                        <select required value={programForm.data.trainerId} onChange={e => programForm.setData('trainerId', parseInt(e.target.value))} className={`w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-orange outline-none shadow-inner ${programForm.errors.trainerId ? 'ring-2 ring-red-300' : ''}`}>
-                          <option value="">Sélectionner un expert</option>
-                          {trainers.map(t => (
-                            <option key={t.id} value={t.id}>{t.user.firstName} {t.user.lastName}</option>
-                          ))}
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Expert Assigné</label>
+                        <select required value={programForm.data.trainerId} onChange={e => programForm.setData('trainerId', parseInt(e.target.value))} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange focus:bg-white outline-none">
+                          <option value="">Sélectionner</option>
+                          {trainers.map(t => <option key={t.id} value={t.id}>{t.user.firstName} {t.user.lastName}</option>)}
                         </select>
-                        {programForm.errors.trainerId && <p className="text-[10px] text-red-500 font-bold mt-2 ml-1 uppercase">{programForm.errors.trainerId}</p>}
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest ml-1">Statut Edition</label>
-                        <select value={programForm.data.status} onChange={e => programForm.setData('status', e.target.value as 'active' | 'pending')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-orange outline-none shadow-inner uppercase tracking-wider">
-                          <option value="pending">Brouillon / Attente</option>
-                          <option value="active">Actif / Publié</option>
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Cohorte de rattachement</label>
+                        <select value={programForm.data.cohortId} onChange={e => programForm.setData('cohortId', parseInt(e.target.value))} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange focus:bg-white outline-none">
+                          <option value="">Choisir une cohorte</option>
+                          {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Statut Publication</label>
+                        <select value={programForm.data.status} onChange={e => programForm.setData('status', e.target.value as 'active' | 'pending')} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-[11px] font-black uppercase tracking-wider focus:ring-2 focus:ring-orange outline-none">
+                          <option value="pending">Brouillon</option>
+                          <option value="active">Publié</option>
                         </select>
                       </div>
                    </div>
                 </div>
 
-                {/* Technical Specs */}
-                <div className="lg:col-span-8 space-y-8">
-                    <div className="space-y-6">
+                {/* Main: Detailed Data */}
+                <div className="lg:col-span-8 space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-5">
+                       <div className="sm:col-span-8">
+                          <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Intitulé de la formation</label>
+                          <input type="text" required value={programForm.data.name} onChange={e => programForm.setData('name', e.target.value)} className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-base font-black focus:bg-white focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all" placeholder="Introduction au Leadership..." />
+                       </div>
+                       <div className="sm:col-span-4">
+                          <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1 flex items-center justify-between">
+                            Identifiant (Slug)
+                            <button type="button" onClick={() => setAutoSlug(!autoSlug)} className={`text-[8px] px-1.5 py-0.5 rounded border ${autoSlug ? 'bg-orange/10 text-orange border-orange/20' : 'bg-gray-100 text-gray-400 border-gray-200'}`}>AUTO: {autoSlug ? 'ON' : 'OFF'}</button>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Hash className="w-3.5 h-3.5" /></span>
+                            <input type="text" disabled={autoSlug} value={programForm.data.slug} onChange={e => programForm.setData('slug', e.target.value)} className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[11px] font-bold text-gray-500 disabled:opacity-60 focus:bg-white focus:ring-2 focus:ring-orange outline-none" />
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest ml-1">Intitulé Officiel</label>
-                        <input type="text" required value={programForm.data.name} onChange={e => programForm.setData('name', e.target.value)} className={`w-full px-6 py-4 bg-gray-50 border-none focus:bg-white rounded-2xl text-base font-black italic focus:ring-2 focus:ring-brand-orange outline-none transition-all shadow-inner ${programForm.errors.name ? 'ring-2 ring-red-300' : ''}`} placeholder="Nom du cursus de formation..." />
-                        {programForm.errors.name && <p className="text-[10px] text-red-500 font-bold mt-2 ml-1 uppercase">{programForm.errors.name}</p>}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest ml-1">Catégorie</label>
-                          <select value={programForm.data.categoryId || ''} onChange={e => programForm.setData('categoryId', e.target.value ? parseInt(e.target.value) : null)} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-orange outline-none shadow-inner">
-                            <option value="">Général / Sans catégorie</option>
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                          </select>
-                          {programForm.errors.categoryId && <p className="text-[10px] text-red-500 font-bold mt-2 ml-1 uppercase">{programForm.errors.categoryId}</p>}
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest ml-1">Volume Horaire / Durée</label>
-                          <input type="text" value={programForm.data.duration} onChange={e => programForm.setData('duration', e.target.value)} className={`w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-orange outline-none shadow-inner ${programForm.errors.duration ? 'ring-2 ring-red-300' : ''}`} placeholder="Ex: 120h / 1 an" />
-                          {programForm.errors.duration && <p className="text-[10px] text-red-500 font-bold mt-2 ml-1 uppercase">{programForm.errors.duration}</p>}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest ml-1">Slogan / Accroche</label>
-                        <input type="text" value={programForm.data.description} onChange={e => programForm.setData('description', e.target.value)} className={`w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-orange outline-none shadow-inner ${programForm.errors.description ? 'ring-2 ring-red-300' : ''}`} />
-                        {programForm.errors.description && <p className="text-[10px] text-red-500 font-bold mt-2 ml-1 uppercase">{programForm.errors.description}</p>}
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Volume Horaire</label>
+                        <input type="text" placeholder="60 heures" value={programForm.data.duration} onChange={e => programForm.setData('duration', e.target.value)} className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none" />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest ml-1">Présentation Synthétique</label>
-                        <textarea rows={4} value={programForm.data.presentation} onChange={e => programForm.setData('presentation', e.target.value)} className={`w-full px-6 py-5 bg-gray-50 border-none rounded-[2rem] text-sm font-medium leading-relaxed focus:ring-2 focus:ring-brand-orange outline-none resize-none shadow-inner ${programForm.errors.presentation ? 'ring-2 ring-red-300' : ''}`} placeholder="Décrivez le contenu pédagogique..." />
-                        {programForm.errors.presentation && <p className="text-[10px] text-red-500 font-bold mt-2 ml-1 uppercase">{programForm.errors.presentation}</p>}
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Catégorie</label>
+                        <select value={programForm.data.categoryId || ''} onChange={e => programForm.setData('categoryId', e.target.value ? parseInt(e.target.value) : null)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none">
+                          <option value="">Général</option>
+                          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Description courte</label>
+                      <input type="text" value={programForm.data.description} onChange={e => programForm.setData('description', e.target.value)} className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none" placeholder="Une accroche pour le catalogue..." />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Présentation Synthétique</label>
+                      <textarea rows={3} value={programForm.data.presentation} onChange={e => programForm.setData('presentation', e.target.value)} className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-[1.5rem] text-sm font-medium focus:ring-2 focus:ring-orange outline-none resize-none leading-relaxed" placeholder="Détails du cursus..." />
                     </div>
                 </div>
               </div>
 
-              {/* Dynamic Lists */}
-              <div className="p-10 bg-gray-50/50 rounded-[3.5rem] border border-gray-100 shadow-inner">
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                    <div>
-                      <div className="flex items-center justify-between mb-8">
-                        <label className="text-[11px] font-black uppercase text-brand-orange tracking-[0.4em] flex items-center gap-3 italic"><Target className="w-5 h-5" /> Objectifs de formation</label>
-                        <button type="button" onClick={() => addArrayItem('objectives')} className="w-10 h-10 rounded-full bg-brand-orange text-white flex items-center justify-center shadow-lg shadow-orange-200 hover:scale-110 active:scale-95 transition-all"><Plus className="w-5 h-5" /></button>
-                      </div>
-                      <div className="space-y-4">
-                        {programForm.data.objectives.map((obj, i) => (
-                          <div key={i} className="flex flex-col gap-1">
-                            <div className="flex gap-4 group">
-                              <input type="text" value={obj} onChange={e => updateArrayField('objectives', i, e.target.value)} className="flex-1 px-6 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-brand-orange outline-none transition-all" placeholder="Point clé de l'apprentissage..." />
-                              <button type="button" onClick={() => removeArrayItem('objectives', i)} className="p-2 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 font-bold text-xl">×</button>
-                            </div>
-                            {programForm.errors[`objectives.${i}` as any] && <p className="text-[9px] text-red-500 font-bold ml-4 uppercase">{programForm.errors[`objectives.${i}` as any]}</p>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-8">
-                        <label className="text-[11px] font-black uppercase text-blue-600 tracking-[0.4em] flex items-center gap-3 italic"><Award className="w-5 h-5" /> Profil de sortie / Débouchés</label>
-                        <button type="button" onClick={() => addArrayItem('outputProfile')} className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-200 hover:scale-110 active:scale-95 transition-all"><Plus className="w-5 h-5" /></button>
-                      </div>
-                      <div className="space-y-4">
-                        {programForm.data.outputProfile.map((prof, i) => (
-                          <div key={i} className="flex flex-col gap-1">
-                            <div className="flex gap-4 group">
-                              <input type="text" value={prof} onChange={e => updateArrayField('outputProfile', i, e.target.value)} className="flex-1 px-6 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-blue-600 outline-none transition-all" placeholder="Compétence acquise..." />
-                              <button type="button" onClick={() => removeArrayItem('outputProfile', i)} className="p-2 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 font-bold text-xl">×</button>
-                            </div>
-                            {programForm.errors[`outputProfile.${i}` as any] && <p className="text-[9px] text-red-500 font-bold ml-4 uppercase">{programForm.errors[`outputProfile.${i}` as any]}</p>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                 </div>
-              </div>
-
-              <div className="pt-10 flex gap-6">
-                <button type="button" onClick={() => setIsProgModalOpen(false)} className="flex-1 py-5 bg-gray-100 text-gray-400 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-gray-200 transition-all">Abandonner</button>
-                <button type="submit" disabled={programForm.processing} className="flex-2 py-5 bg-brand-black text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-2xl hover:bg-brand-orange hover:shadow-orange/30 transition-all disabled:opacity-50">
-                  {programForm.processing ? 'SYNCHRONISATION EN COURS...' : 'CONFIRMER L\'ENREGISTREMENT'}
+              <div className="flex gap-4 pt-10">
+                <button type="button" onClick={() => setIsProgModalOpen(false)} className="flex-1 py-4 bg-gray-100 text-gray-500 font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-gray-200 transition-all italic">Abandonner</button>
+                <button type="submit" disabled={programForm.processing} className="flex-[2] py-4 bg-black text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-xl hover:bg-orange transition-all disabled:opacity-50">
+                  {programForm.processing ? 'SYNCHRONISATION...' : 'VALIDER LES DONNÉES'}
                 </button>
               </div>
             </form>
@@ -451,42 +468,187 @@ export default function ProgrammesIndex() {
         </div>
       )}
 
+      {/* MODALE : MODULES CRUD */}
+      {activeProgForModules && (
+        <div className="fixed inset-0 z-[65] flex items-center justify-end">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setActiveProgForModules(null)} />
+          <div className="relative bg-white h-full w-full max-w-xl shadow-2xl animate-fade-in-right flex flex-col">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div>
+                <span className="text-[10px] font-black text-orange uppercase tracking-widest italic">{activeProgForModules.name}</span>
+                <h3 className="text-2xl font-black text-gray-900 mt-1 flex items-center gap-3">
+                  <Layers className="w-6 h-6" />
+                  GESTION MODULES
+                </h3>
+              </div>
+              <button onClick={() => setActiveProgForModules(null)} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><X className="w-6 h-6 text-gray-400" /></button>
+            </div>
+            
+            <div className="p-8 overflow-y-auto flex-1 space-y-10">
+              <div className="bg-orange-50/30 p-6 rounded-3xl border border-orange-100 shadow-inner">
+                 <h4 className="text-[10px] font-black text-gray-400 mb-4 uppercase tracking-[0.3em] font-sans">Nouveau module d'enseignement</h4>
+                 <div className="space-y-4">
+                    <input type="text" placeholder="Titre du module (ex: Les bases de l'éthique)" className="w-full px-5 py-3.5 bg-white border border-orange-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none transition-all shadow-sm" />
+                    <textarea placeholder="Description du contenu..." className="w-full px-5 py-3.5 bg-white border border-orange-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-orange outline-none resize-none h-24" />
+                    <button className="w-full py-4 bg-orange text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-lg shadow-orange-100">Ajouter au programme</button>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-center justify-between ml-2">
+                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Modules enregistrés</h4>
+                   <span className="bg-gray-100 px-3 py-1 rounded-full text-[9px] font-black text-gray-400">Total: {activeProgForModules.modules?.length || 0}</span>
+                </div>
+                <div className="space-y-4">
+                   {(activeProgForModules.modules || []).length > 0 ? activeProgForModules.modules?.map((mod, i) => (
+                     <div key={mod.id} className="group p-5 bg-white border border-gray-100 rounded-[2rem] hover:shadow-xl hover:shadow-gray-200/50 transition-all flex items-center gap-5">
+                        <div className="w-12 h-12 bg-gray-50 text-gray-400 group-hover:bg-orange group-hover:text-white rounded-2xl flex items-center justify-center font-black italic transition-all">{i+1}</div>
+                        <div className="flex-1">
+                           <div className="font-bold text-gray-900 group-hover:text-orange transition-colors">{mod.title}</div>
+                           <div className="text-[10px] text-gray-400 mt-1 line-clamp-1">{mod.description}</div>
+                        </div>
+                        <button className="p-2 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                     </div>
+                   )) : (
+                     <div className="py-12 text-center text-gray-300 text-[10px] font-black uppercase tracking-widest italic border-2 border-dashed border-gray-50 rounded-[2.5rem]">Aucun module pour le moment</div>
+                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE : MANUELS CRUD */}
+      {activeProgForManuels && (
+        <div className="fixed inset-0 z-[65] flex items-center justify-end">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setActiveProgForManuels(null)} />
+          <div className="relative bg-white h-full w-full max-w-xl shadow-2xl animate-fade-in-right flex flex-col">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div>
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest italic">{activeProgForManuels.name}</span>
+                <h3 className="text-2xl font-black text-gray-900 mt-1 flex items-center gap-3">
+                  <FileText className="w-6 h-6" />
+                  BIBLIOTHÈQUE / MANUELS
+                </h3>
+              </div>
+              <button onClick={() => { setActiveProgForManuels(null); setManuelCoverPreview(null); }} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><X className="w-6 h-6 text-gray-400" /></button>
+            </div>
+            
+            <div className="p-8 overflow-y-auto flex-1 space-y-10">
+              <div className="bg-blue-50/30 p-8 rounded-[2.5rem] border border-blue-100/50 shadow-inner">
+                 <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans">Nouveau document technique</h4>
+                 <div className="space-y-5">
+                    
+                    {/* Preview Section */}
+                    {manuelCoverPreview && (
+                      <div className="relative w-24 h-32 mx-auto rounded-xl overflow-hidden shadow-lg border-2 border-blue-400 animate-in fade-in zoom-in duration-300">
+                        <img src={manuelCoverPreview} className="w-full h-full object-cover" alt="" />
+                        <button onClick={() => setManuelCoverPreview(null)} className="absolute top-1 right-1 bg-white/80 rounded-full p-0.5"><X className="w-3 h-3 text-red-500" /></button>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <label className="text-[9px] font-black text-gray-400 mb-1 block">Titre de l'ouvrage</label>
+                        <input type="text" value={manuelFormData.title} onChange={e => setManuelFormData({...manuelFormData, title: e.target.value})} className="w-full px-5 py-3.5 bg-white border border-blue-100 rounded-2xl text-[11px] font-bold outline-none" placeholder="..." />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 mb-1 block">Prix ($)</label>
+                        <input type="number" value={manuelFormData.price} onChange={e => setManuelFormData({...manuelFormData, price: e.target.value})} placeholder="0" className="w-full px-5 py-3 bg-white border border-blue-100 rounded-2xl text-[11px] font-bold outline-none" />
+                      </div>
+                      <div className="flex items-end pb-1">
+                         <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" checked={manuelFormData.isPublished} onChange={e => setManuelFormData({...manuelFormData, isPublished: e.target.checked})} className="w-4 h-4 rounded text-blue-600 focus:ring-0 border-blue-200" />
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Publier</span>
+                         </label>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                       <input type="file" ref={manualCoverInputRef} className="hidden" accept="image/*" onChange={e => handleManuelFileChange(e, 'cover')} />
+                       <input type="file" ref={manualPdfInputRef} className="hidden" accept="application/pdf" onChange={e => handleManuelFileChange(e, 'pdf')} />
+                       
+                       <button onClick={() => manualCoverInputRef.current?.click()} className={`flex-1 py-3 px-4 rounded-2xl text-[9px] font-black transition-all flex items-center justify-center gap-2 border ${manuelFormData.coverFile ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-blue-100 text-gray-400 hover:bg-blue-50'}`}>
+                          {manuelFormData.coverFile ? <Save className="w-3.5 h-3.5" /> : <ImageIcon className="w-3.5 h-3.5" />} 
+                          {manuelFormData.coverFile ? 'COUVERTURE OK' : 'COUVERTURE (IMG)'}
+                       </button>
+
+                       <button onClick={() => manualPdfInputRef.current?.click()} className={`flex-1 py-3 px-4 rounded-2xl text-[9px] font-black transition-all flex items-center justify-center gap-2 border ${manuelFormData.pdfFile ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-blue-100 text-gray-400 hover:bg-blue-50'}`}>
+                          <UploadCloud className="w-3.5 h-3.5" /> 
+                          {manuelFormData.pdfFile ? 'PDF CHARGÉ' : 'FICHIER PDF'}
+                       </button>
+                    </div>
+                    
+                    <button className="w-full py-4 bg-blue-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Ajouter à la bibliothèque</button>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Manuels disponibles</h4>
+                <div className="space-y-4">
+                   {(activeProgForManuels.manuels || []).length > 0 ? activeProgForManuels.manuels?.map((man) => (
+                     <div key={man.id} className="group p-4 bg-white border border-gray-100 rounded-3xl hover:border-blue-200 transition-all flex items-center gap-5">
+                        <div className="w-14 h-20 bg-gray-50 rounded-lg border border-gray-100 overflow-hidden flex-shrink-0">
+                           {man.coverImage ? <img src={man.coverImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-200"><BookOpen className="w-6 h-6" /></div>}
+                        </div>
+                        <div className="flex-1">
+                           <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{man.title}</div>
+                           <div className="flex items-center gap-3 mt-2">
+                              <span className="text-[10px] font-black text-orange">{man.price} $</span>
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${man.isPublished ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>{man.isPublished ? 'PUBLIÉ' : 'BROUILLON'}</span>
+                           </div>
+                        </div>
+                        <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                           <button className="p-2 text-gray-300 hover:text-blue-600 transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
+                           <button className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                     </div>
+                   )) : (
+                     <div className="py-12 text-center text-gray-300 text-[10px] font-black uppercase tracking-widest italic border-2 border-dashed border-gray-50 rounded-[2.5rem]">Aucun manuel indexé</div>
+                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODALE : CATEGORIES */}
       {isCatModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-brand-black/40 backdrop-blur-md" onClick={() => setIsCatModalOpen(false)} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-fade-in-up transition-all">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsCatModalOpen(false)} />
+          <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
             <div className="px-10 py-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <h3 className="text-xl font-black text-gray-900 flex items-center gap-3 italic"><FolderTree className="w-7 h-7 text-brand-orange" /> GÉRER LES CATÉGORIES</h3>
-              <button onClick={() => setIsCatModalOpen(false)} className="text-gray-400 hover:text-gray-900 bg-white p-2 rounded-full shadow-sm"><X className="w-6 h-6" /></button>
+              <h3 className="text-xl font-black text-gray-900 flex items-center gap-3 italic"><FolderTree className="w-7 h-7 text-orange" /> GÉRER LES CATÉGORIES</h3>
+              <button onClick={() => setIsCatModalOpen(false)} className="text-gray-400 hover:text-gray-900 bg-white p-2 rounded-full shadow-sm border border-gray-100"><X className="w-6 h-6" /></button>
             </div>
             <div className="overflow-y-auto flex-1 p-10 space-y-12">
-              <div className="bg-gray-50 p-8 rounded-[2.5rem] border border-gray-100 shadow-inner">
-                <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans">{editingCategory ? 'MODIFICATION' : 'NOUVELLE UNITÉ'}</h4>
+              <div className="bg-gray-50/80 p-8 rounded-[2.5rem] border border-gray-100 shadow-inner">
+                <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans italic">{editingCategory ? 'MODIFICATION UNITÉ' : 'NOUVELLE CATÉGORIE'}</h4>
                 <form onSubmit={handleSaveCat} className="space-y-5">
-                  <input type="text" required placeholder="Nom de la catégorie" value={categoryForm.data.name} onChange={e => categoryForm.setData('name', e.target.value)} className="w-full px-6 py-4 bg-white border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-orange outline-none shadow-sm transition-all" />
-                  {categoryForm.errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 ml-4 uppercase">{categoryForm.errors.name}</p>}
-                  
-                  <input type="text" placeholder="Description courte (optionnelle)" value={categoryForm.data.description} onChange={e => categoryForm.setData('description', e.target.value)} className="w-full px-6 py-4 bg-white border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-orange outline-none shadow-sm transition-all" />
-                  {categoryForm.errors.description && <p className="text-[10px] text-red-500 font-bold mt-1 ml-4 uppercase">{categoryForm.errors.description}</p>}
-                  
+                  <div className="relative group">
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-orange transition-colors"><Plus className="w-4 h-4" /></span>
+                    <input type="text" required placeholder="Intitulé de la catégorie" value={categoryForm.data.name} onChange={e => categoryForm.setData('name', e.target.value)} className="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all" />
+                  </div>
+                  <input type="text" placeholder="Description courte (optionnelle)" value={categoryForm.data.description} onChange={e => categoryForm.setData('description', e.target.value)} className="w-full px-8 py-4 bg-white border border-gray-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all italic" />
                   <div className="flex gap-4 pt-2">
-                    {editingCategory && <button type="button" onClick={() => {setEditingCategory(null); categoryForm.reset();}} className="flex-1 py-4 bg-white border border-gray-200 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm">Annuler</button>}
-                    <button type="submit" disabled={categoryForm.processing} className="flex-2 py-4 bg-brand-black text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl hover:bg-brand-orange transition-all shadow-xl shadow-brand-black/10">
-                      {categoryForm.processing ? '...' : (editingCategory ? 'METTRE À JOUR' : 'AJOUTER LA CATÉGORIE')}
+                    {editingCategory && <button type="button" onClick={() => {setEditingCategory(null); categoryForm.reset();}} className="flex-1 py-4 bg-white border border-gray-200 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm italic">Annuler</button>}
+                    <button type="submit" disabled={categoryForm.processing} className="flex-2 py-4 bg-black text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl hover:bg-orange transition-all shadow-xl shadow-orange/10">
+                      {categoryForm.processing ? '...' : (editingCategory ? 'METTRE À JOUR' : 'AJOUTER LA UNITÉ')}
                     </button>
                   </div>
                 </form>
               </div>
 
               <div>
-                <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.4em] ml-4 font-sans italic">Index des catégories</h4>
-                <div className="bg-white rounded-[2.5rem] border border-gray-50 overflow-hidden divide-y divide-gray-50 shadow-sm">
+                <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.5em] ml-4 italic">Index des catégories</h4>
+                <div className="bg-white rounded-[2.5rem] border border-gray-50 overflow-hidden divide-y divide-gray-50 shadow-sm transition-all">
                   {categories.map(cat => (
-                    <div key={cat.id} className="flex items-center justify-between p-7 bg-white group hover:bg-orange-50/20 transition-all">
+                    <div key={cat.id} className="flex items-center justify-between p-8 bg-white group hover:bg-orange-50/20 transition-all">
                       <div>
-                        <div className="font-black text-gray-900 group-hover:text-brand-orange transition-colors italic">{cat.name}</div>
-                        <div className="text-[11px] text-gray-400 mt-1 font-bold italic">{cat.description || 'Description non renseignée'}</div>
+                        <div className="font-black text-gray-900 group-hover:text-orange transition-colors italic">{cat.name}</div>
+                        <div className="text-[11px] text-gray-400 mt-1 font-bold italic">{cat.description || '— Aucun détail —'}</div>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => {setEditingCategory(cat); categoryForm.setData({name: cat.name, description: cat.description || ''})}} className="p-3 text-gray-300 hover:text-blue-600 hover:bg-white rounded-2xl transition-all shadow-none hover:shadow-xl"><Edit2 className="w-4 h-4" /></button>
@@ -501,10 +663,10 @@ export default function ProgrammesIndex() {
         </div>
       )}
 
-      {/* MODALE SUPPRESSION */}
+      {/* MODALE : SUPPRESSION */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-brand-black/50 backdrop-blur-md" onClick={() => setIsDeleteModalOpen(false)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsDeleteModalOpen(false)} />
           <div className="relative bg-white rounded-[3rem] p-12 text-center max-w-sm w-full shadow-2xl animate-fade-in-up">
             <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
               <Trash2 className="w-10 h-10" />
@@ -513,7 +675,7 @@ export default function ProgrammesIndex() {
             <p className="text-[10px] text-gray-400 mb-10 font-bold uppercase tracking-[0.2em] leading-loose">Cette opération est irréversible et affectera définitivement les données liées.</p>
             <div className="flex flex-col gap-4">
               <button onClick={confirmDelete} className="w-full py-5 bg-red-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-[1.5rem] shadow-2xl shadow-red-200 hover:bg-red-700 transition-all">Oui, Supprimer</button>
-              <button onClick={() => setIsDeleteModalOpen(false)} className="w-full py-5 bg-gray-50 text-gray-400 font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] hover:bg-gray-100 transition-all">Annuler</button>
+              <button onClick={() => setIsDeleteModalOpen(false)} className="w-full py-5 bg-gray-50 text-gray-400 font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] hover:bg-gray-100 transition-all italic">Annuler</button>
             </div>
           </div>
         </div>

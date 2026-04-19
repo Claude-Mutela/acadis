@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Program from '#models/program'
 import ProgramCategory from '#models/program_category'
 import Trainer from '#models/trainer'
+import Cohort from '#models/cohort'
 import { createProgramValidator, updateProgramValidator } from '#validators/program'
 import app from '@adonisjs/core/services/app'
 import string from '@adonisjs/core/helpers/string'
@@ -16,11 +17,13 @@ export default class ProgrammesController {
 
     const categories = await ProgramCategory.query().orderBy('name', 'asc')
     const trainers = await Trainer.query().preload('user')
+    const cohorts = await Cohort.query().orderBy('name', 'asc')
     
     return inertia.render('administration/programmes/index', { 
       programs, 
       categories,
-      trainers
+      trainers,
+      cohorts
     })
   }
 
