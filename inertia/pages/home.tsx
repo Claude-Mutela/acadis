@@ -165,8 +165,8 @@ export default function Home() {
             {/* Left: Text */}
             <div className="animate-fade-in-up">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-orange/20 border border-orange/40 rounded-full px-4 py-1.5 mb-6">
-                <span className="text-orange text-xs font-bold uppercase tracking-widest">✝ Phila Maison de Témoignages</span>
+              <div className="inline-flex items-center gap-2 bg-orange/20 border border-orange/40 rounded-xl px-4 py-1.5 mb-6">
+                <span className="text-orange text-sm font-bold">Phila Maison de Témoignages</span>
               </div>
 
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6 tracking-tight uppercase">
@@ -200,7 +200,9 @@ export default function Home() {
             <div className="hidden lg:block relative">
               <div className="relative z-10 bg-gray-900 border border-gray-700/50 rounded-2xl p-8 shadow-2xl backdrop-blur-sm">
                 <div className="flex items-center gap-3 mb-8">
-                  <div className="w-12 h-12 bg-orange rounded-xl flex items-center justify-center text-white font-black text-xl">A</div>
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    <img src="/logo ACADIS.png" alt="Logo ACADIS" className="w-full h-full object-contain brightness-0 invert" />
+                  </div>
                   <div>
                     <h3 className="text-white font-bold text-lg">Nos Vacations</h3>
                     <p className="text-gray-400 text-sm">Choisissez votre horaire</p>
