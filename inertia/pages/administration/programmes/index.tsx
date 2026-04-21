@@ -755,13 +755,21 @@ export default function ProgrammesIndex() {
                 <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans">{editingCategory ? 'Modification catégorie' : 'Nouvelle catégorie'}</h4>
                 <form onSubmit={handleSaveCat} className="space-y-4">
                    <div className="grid grid-cols-1 gap-4">
+                      {Object.keys(categoryForm.errors).length > 0 && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                           <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                           <p className="text-xs font-bold text-red-700">Le formulaire contient des erreurs à corriger.</p>
+                        </div>
+                      )}
                       <div>
                         <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Intitulé</label>
-                        <input type="text" required placeholder="Ex: Informatique, Management..." value={categoryForm.data.name} onChange={e => categoryForm.setData('name', e.target.value)} className="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all" />
+                        <input type="text" required placeholder="Ex: Informatique, Management..." value={categoryForm.data.name} onChange={e => categoryForm.setData('name', e.target.value)} className={`w-full px-5 py-3.5 bg-white border rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all ${categoryForm.errors.name ? 'border-red-300 bg-red-50/30' : 'border-gray-200'}`} />
+                        {categoryForm.errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 ml-2">{categoryForm.errors.name}</p>}
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Description</label>
-                        <input type="text" placeholder="Description courte (optionnelle)" value={categoryForm.data.description} onChange={e => categoryForm.setData('description', e.target.value)} className="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all italic" />
+                        <input type="text" required placeholder="Description (obligatoire)" value={categoryForm.data.description} onChange={e => categoryForm.setData('description', e.target.value)} className={`w-full px-5 py-3.5 bg-white border rounded-2xl text-xs font-medium focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all italic ${categoryForm.errors.description ? 'border-red-300 bg-red-50/30' : 'border-gray-200'}`} />
+                        {categoryForm.errors.description && <p className="text-[10px] text-red-500 font-bold mt-1 ml-2">{categoryForm.errors.description}</p>}
                       </div>
                    </div>
                    <div className="flex gap-4 pt-2">
