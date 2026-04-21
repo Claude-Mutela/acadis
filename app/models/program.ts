@@ -6,6 +6,7 @@ import Cohort from './cohort.js'
 import Module from './module.js'
 import Manuel from './manuel.js'
 import Trainer from './trainer.js'
+import Vacation from './vacation.js'
 
 export default class Program extends ProgramSchema {
     @column()
@@ -29,4 +30,9 @@ export default class Program extends ProgramSchema {
 
     @hasMany(() => Manuel)
     declare manuels: HasMany<typeof Manuel>
+
+    @manyToMany(() => Vacation, {
+      pivotTable: 'program_vacation',
+    })
+    declare vacations: ManyToMany<typeof Vacation>
 }

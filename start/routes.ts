@@ -55,6 +55,12 @@ router.delete('/administration/programmes/:id', [controllers.Programmes, 'destro
 router.post('/administration/programmes/categories', [controllers.ProgramCategories, 'store']).as('admin.programmes.categories.store')
 router.put('/administration/programmes/categories/:id', [controllers.ProgramCategories, 'update']).as('admin.programmes.categories.update')
 router.delete('/administration/programmes/categories/:id', [controllers.ProgramCategories, 'destroy']).as('admin.programmes.categories.destroy')
+
+// Vacations
+router.post('/administration/programmes/vacations', [controllers.Vacations, 'store']).as('admin.programmes.vacations.store')
+router.put('/administration/programmes/vacations/:id', [controllers.Vacations, 'update']).as('admin.programmes.vacations.update')
+router.delete('/administration/programmes/vacations/:id', [controllers.Vacations, 'destroy']).as('admin.programmes.vacations.destroy')
+
 // Planning
 router.on('/administration/planning').renderInertia('administration/planning/index', {}).as('admin.planning.index')
 // Profil

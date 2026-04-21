@@ -19,12 +19,16 @@ export default class ProgrammesController {
     const categories = await ProgramCategory.query().orderBy('name', 'asc')
     const trainers = await Trainer.query().preload('user')
     const cohorts = await Cohort.query().orderBy('name', 'asc')
+    // Récupérer les vacations avec pré-chargement de leurs programmes
+    const { default: Vacation } = await import('#models/vacation')
+    const vacations = await Vacation.query().preload('programs').orderBy('day', 'asc')
     
     return inertia.render('administration/programmes/index', { 
       programs, 
       categories,
       trainers,
-      cohorts
+      cohorts,
+      vacations
     })
   }
 

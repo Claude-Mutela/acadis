@@ -306,6 +306,21 @@ export class ProgramCategorySchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class ProgramVacationSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'programId', 'updatedAt', 'vacationId'] as const
+  $columns = ProgramVacationSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare programId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare vacationId: number
+}
+
 export class ScheduleSchema extends BaseModel {
   static $columns = ['cohortId', 'createdAt', 'dayOfWeek', 'endTime', 'id', 'programId', 'startTime', 'updatedAt'] as const
   $columns = ScheduleSchema.$columns
@@ -461,4 +476,23 @@ export class UserProfileSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare userId: number
+}
+
+export class VacationSchema extends BaseModel {
+  static $columns = ['cohortId', 'createdAt', 'day', 'endTime', 'id', 'startTime', 'updatedAt'] as const
+  $columns = VacationSchema.$columns
+  @column()
+  declare cohortId: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare day: string
+  @column()
+  declare endTime: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare startTime: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
 }

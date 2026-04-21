@@ -14,7 +14,7 @@ type Categorie = { id: number, name: string, description: string | null }
 type Cohort = { id: number, name: string }
 type BaseModule = { id: number, title: string, description: string, order: number, programId: number }
 type BaseManuel = { id: number, title: string, description: string, price: number, coverImage: string | null, fileUrl: string, isPublished: boolean, programId: number }
-type Vacation = { id: number, name: string, programId: number, cohortId: number, day: string, hour: string, minute: string }
+type Vacation = { id: number, name: string, programId: number, cohortId: number, day: string, startTime: string, endTime: string }
 
 type Programme = {
   id: number
@@ -37,11 +37,12 @@ type Programme = {
 }
 
 export default function ProgrammesIndex() {
-  const { programs, categories, trainers, cohorts } = usePage<{ 
+  const { programs, categories, trainers, cohorts, vacations } = usePage<{ 
     programs: Programme[], 
     categories: Categorie[],
     trainers: Trainer[],
-    cohorts: Cohort[]
+    cohorts: Cohort[],
+    vacations: Vacation[]
   }>().props
   
   const [searchProg, setSearchProg] = useState('')
@@ -102,39 +103,28 @@ export default function ProgrammesIndex() {
     }
   }
 
-  // ── Logic: Vacations (Mock) ────────────────────────────────────────────────
-  const [vacations, setVacations] = useState<Vacation[]>([
-    { id: 1, name: 'Matin', programId: programs[0]?.id || 1, cohortId: cohorts[0]?.id || 1, day: 'Lundi', hour: '08', minute: '30' },
-    { id: 2, name: 'Midi', programId: programs[1]?.id || 2, cohortId: cohorts[0]?.id || 1, day: 'Mercredi', hour: '14', minute: '00' },
-  ])
+  // ── Logic: Vacations (useForm) ────────────────────────────────────────────────
   const [editingVacation, setEditingVacation] = useState<Vacation | null>(null)
-  const [vacationForm, setVacationForm] = useState({
+  const vacationForm = useForm({
     name: '',
     programId: '',
     cohortId: '',
     day: 'Lundi',
-    hour: '08',
-    minute: '00'
+    startTime: '08:00',
+    endTime: '10:00'
   })
 
   const handleSaveVacation = (e: React.FormEvent) => {
     e.preventDefault()
     if (editingVacation) {
-      setVacations(vacations.map(v => v.id === editingVacation.id ? { ...v, ...vacationForm, programId: Number(vacationForm.programId), cohortId: Number(vacationForm.cohortId) } as Vacation : v))
-      setEditingVacation(null)
+      vacationForm.put(`/administration/programmes/vacations/${editingVacation.id}`, {
+        onSuccess: () => { setEditingVacation(null); vacationForm.reset(); }
+      })
     } else {
-      const newVac = {
-        id: Date.now(),
-        name: vacationForm.name,
-        programId: Number(vacationForm.programId),
-        cohortId: Number(vacationForm.cohortId),
-        day: vacationForm.day,
-        hour: vacationForm.hour,
-        minute: vacationForm.minute
-      }
-      setVacations([...vacations, newVac])
+      vacationForm.post('/administration/programmes/vacations', {
+        onSuccess: () => vacationForm.reset()
+      })
     }
-    setVacationForm({ name: '', programId: '', cohortId: '', day: 'Lundi', hour: '08', minute: '00' })
   }
 
   // ── Logic: Programmes ──────────────────────────────────────────────────────
@@ -285,8 +275,7 @@ export default function ProgrammesIndex() {
     if (url) {
       router.delete(url, { onSuccess: () => setIsDeleteModalOpen(false) })
     } else if (deleteTarget.type === 'vacation') {
-      setVacations(vacations.filter(v => v.id !== deleteTarget.id))
-      setIsDeleteModalOpen(false)
+      router.delete(`/administration/programmes/vacations/${deleteTarget.id}`, { onSuccess: () => setIsDeleteModalOpen(false) })
     }
   }
 
@@ -835,52 +824,52 @@ export default function ProgrammesIndex() {
                  <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans">Programmer une séance</h4>
                   <form onSubmit={handleSaveVacation} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                       <div className="col-span-2">
-                          <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Intitulé de la séance</label>
-                          <input type="text" required value={vacationForm.name} onChange={e => setVacationForm({...vacationForm, name: e.target.value})} placeholder="Ex: MATIN, MIDI, SOIR..." className="w-full px-4 py-3 bg-white border border-blue-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" />
-                       </div>
+                       {Object.keys(vacationForm.errors).length > 0 && (
+                        <div className="col-span-2 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                           <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                           <p className="text-xs font-bold text-red-700">Certains champs de la vacation sont invalides :
+                             {Object.entries(vacationForm.errors).map(([f, m]) => <span className="block italic text-[10px] mt-0.5" key={f}>- {m}</span>)}
+                           </p>
+                        </div>
+                       )}
                        <div className="col-span-2 sm:col-span-1">
                           <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Cohorte</label>
-                          <select required value={vacationForm.cohortId} onChange={e => setVacationForm({...vacationForm, cohortId: e.target.value, programId: ''})} className="w-full px-4 py-3 bg-white border border-blue-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                          <select required value={vacationForm.data.cohortId} onChange={e => {vacationForm.setData('cohortId', e.target.value); vacationForm.setData('programId', '')}} className={`w-full px-4 py-3 bg-white border rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none ${vacationForm.errors.cohortId ? 'border-red-300 bg-red-50/50' : 'border-blue-100'}`}>
                             <option value="">Sélectionner</option>
                             {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                           </select>
                        </div>
                        <div className="col-span-2 sm:col-span-1">
                           <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Programme</label>
-                          <select required value={vacationForm.programId} onChange={e => setVacationForm({...vacationForm, programId: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" disabled={!vacationForm.cohortId}>
+                          <select required value={vacationForm.data.programId} onChange={e => vacationForm.setData('programId', e.target.value)} className={`w-full px-4 py-3 bg-white border rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 ${vacationForm.errors.programId ? 'border-red-300 bg-red-50/50' : 'border-blue-100'}`} disabled={!vacationForm.data.cohortId}>
                             <option value="">Sélectionner</option>
-                            {programs.filter(p => !vacationForm.cohortId || p.cohorts?.some(c => c.id.toString() === vacationForm.cohortId.toString())).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            {programs.filter(p => !vacationForm.data.cohortId || p.cohorts?.some(c => c.id.toString() === vacationForm.data.cohortId.toString())).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                           </select>
                        </div>
                        <div className="col-span-2 sm:col-span-1">
                           <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Jour</label>
-                          <select value={vacationForm.day} onChange={e => setVacationForm({...vacationForm, day: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                          <select value={vacationForm.data.day} onChange={e => vacationForm.setData('day', e.target.value)} className={`w-full px-4 py-3 bg-white border rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none ${vacationForm.errors.day ? 'border-red-300 bg-red-50/50' : 'border-blue-100'}`}>
                             {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
                        </div>
                        <div className="col-span-2 sm:col-span-1 flex gap-2">
                           <div className="flex-1">
-                            <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Heure</label>
-                            <select value={vacationForm.hour} onChange={e => setVacationForm({...vacationForm, hour: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none">
-                              {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
-                            </select>
+                            <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Début</label>
+                            <input type="time" required value={vacationForm.data.startTime} onChange={e => vacationForm.setData('startTime', e.target.value)} className={`w-full px-4 py-3 bg-white border rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none ${vacationForm.errors.startTime ? 'border-red-300 bg-red-50/50' : 'border-blue-100'}`} />
                           </div>
                           <div className="flex-1">
-                            <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Minute</label>
-                            <select value={vacationForm.minute} onChange={e => setVacationForm({...vacationForm, minute: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none">
-                              {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map(m => <option key={m} value={m}>{m}</option>)}
-                            </select>
+                            <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Fin</label>
+                            <input type="time" required value={vacationForm.data.endTime} onChange={e => vacationForm.setData('endTime', e.target.value)} className={`w-full px-4 py-3 bg-white border rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none ${vacationForm.errors.endTime ? 'border-red-300 bg-red-50/50' : 'border-blue-100'}`} />
                           </div>
                        </div>
                     </div>
                     <div className="flex gap-4 pt-4">
                       {editingVacation && (
-                        <button type="button" onClick={() => {setEditingVacation(null); setVacationForm({name: '', programId: '', cohortId: '', day: 'Lundi', hour: '08', minute: '00'});}} className="flex-1 py-4 bg-white border border-blue-200 text-blue-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all italic">
+                        <button type="button" onClick={() => {setEditingVacation(null); vacationForm.reset();}} className="flex-1 py-4 bg-white border border-blue-200 text-blue-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all italic">
                           Annuler
                         </button>
                       )}
-                      <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-xl hover:bg-blue-700 transition-all">
+                      <button type="submit" disabled={vacationForm.processing} className="flex-[2] py-4 bg-blue-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-xl hover:bg-blue-700 transition-all disabled:opacity-50">
                         {editingVacation ? 'METTRE À JOUR' : 'Valider la vacation'}
                       </button>
                     </div>
@@ -898,9 +887,10 @@ export default function ProgrammesIndex() {
                     const coh = cohorts.find(c => c.id === vac.cohortId)
                     return (
                       <div key={vac.id} className="group p-5 bg-white border border-gray-100 rounded-[2rem] hover:border-blue-200 transition-all flex items-center gap-5 shadow-sm hover:shadow-xl hover:shadow-blue-50">
-                          <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center transition-all group-hover:bg-blue-600 group-hover:text-white">
-                             <span className="text-[10px] font-black uppercase tracking-tighter leading-none">{vac.day.slice(0, 3)}</span>
-                             <span className="text-sm font-black mt-0.5">{vac.hour}:{vac.minute}</span>
+                          <div className="w-14 h-16 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center transition-all group-hover:bg-blue-600 group-hover:text-white px-2">
+                             <span className="text-[9px] font-black uppercase tracking-tighter leading-none mb-1">{vac.day.slice(0, 3)}</span>
+                             <span className="text-xs font-black">{vac.startTime}</span>
+                             <span className="text-[9px] font-bold opacity-75">{vac.endTime}</span>
                           </div>
                           <div className="flex-1">
                             <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{coh?.name || 'Cohorte inconnue'}</div>
@@ -910,13 +900,13 @@ export default function ProgrammesIndex() {
                           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                             <button onClick={() => {
                               setEditingVacation(vac);
-                              setVacationForm({
+                              vacationForm.setData({
                                 name: vac.name,
                                 programId: vac.programId.toString(),
                                 cohortId: vac.cohortId.toString(),
                                 day: vac.day,
-                                hour: vac.hour,
-                                minute: vac.minute
+                                startTime: vac.startTime,
+                                endTime: vac.endTime
                               });
                             }} className="p-2 bg-white text-gray-400 hover:text-blue-600 rounded-xl shadow-sm border border-gray-100 transition-all"><Edit2 className="w-4 h-4" /></button>
                             <button onClick={() => promptDeleteProp('vacation', vac.id)} className="p-2 bg-white text-gray-400 hover:text-red-500 rounded-xl shadow-sm border border-gray-100 transition-all"><Trash2 className="w-4 h-4" /></button>

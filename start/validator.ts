@@ -35,6 +35,7 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'file.extname': 'Le fichier {{ field }} doit avoir une extension valide : {{ extnames }}.',
   'date': 'Le champ {{ field }} doit être une date valide.',
   'date.format': 'Le champ {{ field }} doit respecter le format {{ format }}.',
+  'regex': 'Le format du champ {{ field }} est invalide.',
 
   // Champs spécifiques
   'name.required': "L'intitulé est obligatoire.",
@@ -47,5 +48,14 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'trainerId.required': "L'expert assigné est obligatoire.",
   'objectives.required': 'Au moins un objectif pédagogique est requis.',
   'outputProfile.required': 'Au moins un profil de sortie est requis.',
+  
+  // Vacations
+  'cohortId.required': 'La sélection de la cohorte est obligatoire.',
+  'programId.required': 'La sélection du programme est obligatoire.',
+  'day.required': 'Le jour de la semaine est obligatoire.',
+  'startTime.required': "L'heure de début est obligatoire.",
+  'endTime.required': "L'heure de fin est obligatoire.",
+  'startTime.regex': "Le format de l'heure de début doit être HH:MM.",
+  'endTime.regex': "Le format de l'heure de fin doit être HH:MM.",
 })
 
