@@ -12,6 +12,7 @@ export default class ProgrammesController {
   async index({ inertia }: HttpContext) {
     const programs = await Program.query()
       .preload('category')
+      .preload('cohorts')
       .preload('trainer', (q) => q.preload('user'))
       .orderBy('createdAt', 'desc')
 
