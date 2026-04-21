@@ -4,16 +4,17 @@ export const createProgramValidator = vine.compile(
   vine.object({
     name: vine.string().trim().minLength(3).maxLength(255),
     categoryId: vine.number().optional().nullable(),
-    trainerId: vine.number(), // Requis par la DB
-    description: vine.string().trim().maxLength(255).optional().nullable(),
-    presentation: vine.string().trim().optional().nullable(),
-    duration: vine.string().trim().optional().nullable(),
+    trainerId: vine.number(),
+    cohortId: vine.number().optional().nullable(),
+    description: vine.string().trim().minLength(3).maxLength(255),
+    presentation: vine.string().trim().minLength(10),
+    duration: vine.string().trim().minLength(1),
     status: vine.enum(['active', 'pending'] as const).optional(),
-    objectives: vine.array(vine.string()).optional(),
-    outputProfile: vine.array(vine.string()).optional(),
+    objectives: vine.array(vine.string().trim().minLength(3)),
+    outputProfile: vine.array(vine.string().trim().minLength(3)),
     coverImage: vine.file({
       size: '2mb',
-      extnames: ['jpg', 'png', 'jpeg']
+      extnames: ['jpg', 'png', 'jpeg', 'webp']
     }).optional()
   })
 )
@@ -23,15 +24,16 @@ export const updateProgramValidator = vine.compile(
     name: vine.string().trim().minLength(3).maxLength(255).optional(),
     categoryId: vine.number().optional().nullable(),
     trainerId: vine.number().optional().nullable(),
-    description: vine.string().trim().maxLength(255).optional().nullable(),
-    presentation: vine.string().trim().optional().nullable(),
-    duration: vine.string().trim().optional().nullable(),
+    cohortId: vine.number().optional().nullable(),
+    description: vine.string().trim().minLength(3).maxLength(255).optional(),
+    presentation: vine.string().trim().minLength(10).optional(),
+    duration: vine.string().trim().minLength(1).optional(),
     status: vine.enum(['active', 'pending'] as const).optional(),
-    objectives: vine.array(vine.string()).optional(),
-    outputProfile: vine.array(vine.string()).optional(),
+    objectives: vine.array(vine.string().trim().minLength(3)).optional(),
+    outputProfile: vine.array(vine.string().trim().minLength(3)).optional(),
     coverImage: vine.file({
       size: '2mb',
-      extnames: ['jpg', 'png', 'jpeg']
+      extnames: ['jpg', 'png', 'jpeg', 'webp']
     }).optional().nullable()
   })
 )

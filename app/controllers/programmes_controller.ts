@@ -30,8 +30,12 @@ export default class ProgrammesController {
   async store({ request, response, session }: HttpContext) {
     const payload = await request.validateUsing(createProgramValidator)
     
-    // Slug generation
-    const slug = string.slug(payload.name).toLowerCase()
+    // Slug generation (unique)
+    let slug = string.slug(payload.name).toLowerCase()
+    const existing = await Program.findBy('slug', slug)
+    if (existing) {
+      slug = `${slug}-${Date.now()}`
+    }
 
     // Handle Image
     let coverImagePath: string | null = null
@@ -45,10 +49,10 @@ export default class ProgrammesController {
       coverImagePath = `/uploads/programs/${fileName}`
     }
 
-    const { coverImage, objectives, outputProfile, ...data } = payload
+    const { coverImage, objectives, outputProfile, cohortId, ...data } = payload
 
     try {
-      await Program.create({
+      const program = await Program.create({
         ...data,
         description: data.description ?? '',
         presentation: data.presentation ?? '',
@@ -58,6 +62,11 @@ export default class ProgrammesController {
         objectives: JSON.stringify(objectives || []),
         outputProfile: JSON.stringify(outputProfile || [])
       })
+
+      // Attacher la cohorte (relation many-to-many)
+      if (cohortId) {
+        await program.related('cohorts').sync([cohortId])
+      }
 
       session.flash('success', 'Programme créé avec succès !')
       return response.redirect().back()
@@ -89,7 +98,7 @@ export default class ProgrammesController {
       program.coverImage = `/uploads/programs/${fileName}`
     }
 
-    const { coverImage: _unused, objectives, outputProfile, ...data } = payload
+    const { coverImage: _unused, objectives, outputProfile, cohortId, ...data } = payload
 
     // Update fields
     if (data.name) {
@@ -112,6 +121,12 @@ export default class ProgrammesController {
 
     try {
       await program.save()
+
+      // Synchroniser la cohorte (relation many-to-many)
+      if (cohortId !== undefined) {
+        await program.related('cohorts').sync(cohortId ? [cohortId] : [])
+      }
+
       session.flash('success', 'Programme mis à jour avec succès !')
       return response.redirect().back()
     } catch (error) {

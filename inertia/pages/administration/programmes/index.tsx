@@ -228,12 +228,15 @@ export default function ProgrammesIndex() {
     e.preventDefault()
     if (progMode === 'create') {
       programForm.post('/administration/programmes', {
-        onSuccess: () => setIsProgModalOpen(false)
+        forceFormData: true,
+        onSuccess: () => setIsProgModalOpen(false),
+        onError: (errors) => console.error('Validation errors:', errors)
       })
     } else {
       // @ts-ignore
       programForm.post(`/administration/programmes/${currentProgId}?_method=PUT`, {
         onSuccess: () => setIsProgModalOpen(false),
+        onError: (errors) => console.error('Validation errors:', errors),
         forceFormData: true
       })
     }
@@ -420,6 +423,20 @@ export default function ProgrammesIndex() {
             </div>
 
             <form onSubmit={handleSaveProg} className="overflow-y-auto flex-1 p-8 space-y-10">
+              {/* Bandeau d'erreurs global */}
+              {Object.keys(programForm.errors).length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-red-700">Le formulaire contient des erreurs :</p>
+                    <ul className="mt-2 space-y-1">
+                      {Object.entries(programForm.errors).map(([field, msg]) => (
+                        <li key={field} className="text-xs text-red-600">• <strong>{field}</strong> : {msg}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 lg:grid-cols-11 gap-8">
                 {/* Lateral: Image & Settings */}
                 <div className="lg:col-span-3 space-y-6">
@@ -460,26 +477,16 @@ export default function ProgrammesIndex() {
                           <option value="active">Publié</option>
                         </select>
                       </div>
+                      
                    </div>
                 </div>
 
                 {/* Main: Detailed Data */}
                 <div className="lg:col-span-8 space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-5">
-                       <div className="sm:col-span-8">
-                          <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Intitulé de la formation</label>
-                          <input type="text" required value={programForm.data.name} onChange={e => programForm.setData('name', e.target.value)} className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-base font-black focus:bg-white focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all" placeholder="Introduction au Leadership..." />
-                       </div>
-                       <div className="sm:col-span-4">
-                          <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1 flex items-center justify-between">
-                            Identifiant (Slug)
-                            <button type="button" onClick={() => setAutoSlug(!autoSlug)} className={`text-[8px] px-1.5 py-0.5 rounded border ${autoSlug ? 'bg-orange/10 text-orange border-orange/20' : 'bg-gray-100 text-gray-400 border-gray-200'}`}>AUTO: {autoSlug ? 'ON' : 'OFF'}</button>
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Hash className="w-3.5 h-3.5" /></span>
-                            <input type="text" disabled={autoSlug} value={programForm.data.slug} onChange={e => programForm.setData('slug', e.target.value)} className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[11px] font-bold text-gray-500 disabled:opacity-60 focus:bg-white focus:ring-2 focus:ring-orange outline-none" />
-                          </div>
-                       </div>
+                    <div>
+                       <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Intitulé de la formation</label>
+                       <input type="text" required value={programForm.data.name} onChange={e => programForm.setData('name', e.target.value)} className={`w-full px-5 py-3.5 bg-gray-50 border rounded-2xl text-base font-black focus:bg-white focus:ring-2 focus:ring-orange outline-none shadow-sm transition-all ${programForm.errors.name ? 'border-red-300 bg-red-50/30' : 'border-gray-100'}`} placeholder="Introduction au Leadership..." />
+                       {programForm.errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 ml-2">{programForm.errors.name}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -504,6 +511,70 @@ export default function ProgrammesIndex() {
                     <div>
                       <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Présentation Synthétique</label>
                       <textarea rows={3} value={programForm.data.presentation} onChange={e => programForm.setData('presentation', e.target.value)} className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-[1.5rem] text-sm font-medium focus:ring-2 focus:ring-orange outline-none resize-none leading-relaxed" placeholder="Détails du cursus..." />
+                    </div>
+
+                    {/* Objectifs pédagogiques */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          <Target className="w-3.5 h-3.5 text-orange" />
+                          Objectifs Pédagogiques
+                        </label>
+                        <button type="button" onClick={() => addArrayItem('objectives')} className="flex items-center gap-1.5 text-[9px] font-black text-orange bg-orange/10 hover:bg-orange/20 px-3 py-1.5 rounded-xl transition-all uppercase tracking-wider">
+                          <Plus className="w-3 h-3" /> Ajouter
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {programForm.data.objectives.map((obj, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-orange/10 text-orange text-[9px] font-black flex items-center justify-center flex-shrink-0">{idx + 1}</span>
+                            <input
+                              type="text"
+                              value={obj}
+                              onChange={e => updateArrayField('objectives', idx, e.target.value)}
+                              placeholder={`Objectif ${idx + 1}...`}
+                              className={`flex-1 px-4 py-2.5 bg-gray-50 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-orange outline-none transition-all ${(programForm.errors as any)[`objectives.${idx}`] ? 'border-red-300 bg-red-50/30' : 'border-gray-200'}`}
+                            />
+                            {programForm.data.objectives.length > 1 && (
+                              <button type="button" onClick={() => removeArrayItem('objectives', idx)} className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Profil de sortie */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          <Award className="w-3.5 h-3.5 text-orange" />
+                          Profil de Sortie
+                        </label>
+                        <button type="button" onClick={() => addArrayItem('outputProfile')} className="flex items-center gap-1.5 text-[9px] font-black text-orange bg-orange/10 hover:bg-orange/20 px-3 py-1.5 rounded-xl transition-all uppercase tracking-wider">
+                          <Plus className="w-3 h-3" /> Ajouter
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {programForm.data.outputProfile.map((profile, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-orange/10 text-orange text-[9px] font-black flex items-center justify-center flex-shrink-0">{idx + 1}</span>
+                            <input
+                              type="text"
+                              value={profile}
+                              onChange={e => updateArrayField('outputProfile', idx, e.target.value)}
+                              placeholder={`Compétence acquise ${idx + 1}...`}
+                              className={`flex-1 px-4 py-2.5 bg-gray-50 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-orange outline-none transition-all ${(programForm.errors as any)[`outputProfile.${idx}`] ? 'border-red-300 bg-red-50/30' : 'border-gray-200'}`}
+                            />
+                            {programForm.data.outputProfile.length > 1 && (
+                              <button type="button" onClick={() => removeArrayItem('outputProfile', idx)} className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                 </div>
               </div>
