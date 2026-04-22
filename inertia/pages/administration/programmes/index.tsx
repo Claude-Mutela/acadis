@@ -14,7 +14,7 @@ type Categorie = { id: number, name: string, description: string | null }
 type Cohort = { id: number, name: string }
 type BaseModule = { id: number, title: string, description: string, order: number, programId: number }
 type BaseManuel = { id: number, title: string, description: string, price: number, coverImage: string | null, fileUrl: string, isPublished: boolean, programId: number }
-type Vacation = { id: number, name: string, programId: number, cohortId: number, day: string, startTime: string, endTime: string }
+type Vacation = { id: number, name: string, cohortId: number, day: string, startTime: string, endTime: string, programs?: Programme[] }
 
 type Programme = {
   id: number
@@ -972,7 +972,7 @@ export default function ProgrammesIndex() {
                 </div>
                 <div className="space-y-4">
                   {vacations.map(vac => {
-                    const prog = programs.find(p => p.id === vac.programId)
+                    const prog = vac.programs?.[0]
                     const coh = cohorts.find(c => c.id === vac.cohortId)
                     return (
                       <div key={vac.id} className="group p-5 bg-white border border-gray-100 rounded-[2rem] hover:border-blue-200 transition-all flex items-center gap-5 shadow-sm hover:shadow-xl hover:shadow-blue-50">
@@ -991,7 +991,7 @@ export default function ProgrammesIndex() {
                               setEditingVacation(vac);
                               vacationForm.setData({
                                 name: vac.name,
-                                programId: vac.programId.toString(),
+                                programId: prog?.id?.toString() || '',
                                 cohortId: vac.cohortId.toString(),
                                 day: vac.day,
                                 startTime: vac.startTime,
