@@ -50,11 +50,35 @@ export default function ProgrammesIndex() {
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false)
   const [isProgModalOpen, setIsProgModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'cat' | 'prog' | 'vacation', id: number } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'cat' | 'prog' | 'vacation' | 'module', id: number } | null>(null)
 
   // Modales spécifiques
   const [activeProgForModules, setActiveProgForModules] = useState<Programme | null>(null)
   const [activeProgForManuels, setActiveProgForManuels] = useState<Programme | null>(null)
+
+  // ── Logic: Modules (useForm) ────────────────────────────────────────────────
+  const [editingModule, setEditingModule] = useState<BaseModule | null>(null)
+  const moduleForm = useForm({
+    title: '',
+    description: '',
+    order: 1,
+    programId: ''
+  })
+
+  const handleSaveModule = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!activeProgForModules?.id) return
+    
+    if (editingModule) {
+      moduleForm.put(`/administration/programmes/modules/${editingModule.id}`, {
+        onSuccess: () => { setEditingModule(null); moduleForm.reset(); }
+      })
+    } else {
+      moduleForm.post('/administration/programmes/modules', {
+        onSuccess: () => moduleForm.reset()
+      })
+    }
+  }
 
   // État local pour le formulaire de manuel (Stub)
   const [manuelFormData, setManuelFormData] = useState({
@@ -172,6 +196,18 @@ export default function ProgrammesIndex() {
     }
   }, [programForm.data.name])
 
+  // S'assurer que les données des modales (modules/manuels) sont jour lors des mises à jour réseau (Inertia reload)
+  useEffect(() => {
+    if (activeProgForModules) {
+      const refreshed = programs.find(p => p.id === activeProgForModules.id)
+      if (refreshed) setActiveProgForModules(refreshed)
+    }
+    if (activeProgForManuels) {
+      const refreshed = programs.find(p => p.id === activeProgForManuels.id)
+      if (refreshed) setActiveProgForManuels(refreshed)
+    }
+  }, [programs])
+
   const parseJsonArray = (data: any): string[] => {
     if (Array.isArray(data)) return data
     try { return JSON.parse(data) } catch { return [''] }
@@ -260,7 +296,7 @@ export default function ProgrammesIndex() {
     }
   }
 
-  const promptDeleteProp = (type: 'cat' | 'prog' | 'vacation', id: number) => {
+  const promptDeleteProp = (type: 'cat' | 'prog' | 'vacation' | 'module', id: number) => {
     setDeleteTarget({ type, id })
     setIsDeleteModalOpen(true)
   }
@@ -276,6 +312,8 @@ export default function ProgrammesIndex() {
       router.delete(url, { onSuccess: () => setIsDeleteModalOpen(false) })
     } else if (deleteTarget.type === 'vacation') {
       router.delete(`/administration/programmes/vacations/${deleteTarget.id}`, { onSuccess: () => setIsDeleteModalOpen(false) })
+    } else if (deleteTarget.type === 'module') {
+      router.delete(`/administration/programmes/modules/${deleteTarget.id}`, { onSuccess: () => setIsDeleteModalOpen(false) })
     }
   }
 
@@ -592,17 +630,57 @@ export default function ProgrammesIndex() {
                   GESTION MODULES
                 </h3>
               </div>
-              <button onClick={() => setActiveProgForModules(null)} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><X className="w-6 h-6 text-gray-400" /></button>
+              <button onClick={() => {setActiveProgForModules(null); setEditingModule(null); moduleForm.reset();}} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><X className="w-6 h-6 text-gray-400" /></button>
             </div>
             
             <div className="p-8 overflow-y-auto flex-1 space-y-10">
               <div className="bg-orange-50/30 p-6 rounded-3xl border border-orange-100 shadow-inner">
-                 <h4 className="text-[10px] font-black text-gray-400 mb-4 uppercase tracking-[0.3em] font-sans">Nouveau module d'enseignement</h4>
-                 <div className="space-y-4">
-                    <input type="text" placeholder="Titre du module (ex: Les bases de l'éthique)" className="w-full px-5 py-3.5 bg-white border border-orange-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none transition-all shadow-sm" />
-                    <textarea placeholder="Description du contenu..." className="w-full px-5 py-3.5 bg-white border border-orange-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-orange outline-none resize-none h-24" />
-                    <button className="w-full py-4 bg-orange text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-lg shadow-orange-100">Ajouter au programme</button>
-                 </div>
+                 <h4 className="text-[10px] font-black text-gray-400 mb-4 uppercase tracking-[0.3em] font-sans">{editingModule ? 'Mettre à jour le module' : 'Nouveau module d\'enseignement'}</h4>
+                 
+                 {Object.keys(moduleForm.errors).length > 0 && (
+                   <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                     <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                     <div className="text-xs font-bold text-red-700">
+                       <p>Correctifs nécessaires :</p>
+                       {Object.values(moduleForm.errors).map((err, idx) => <span key={idx} className="block italic text-[10px]">- {err}</span>)}
+                     </div>
+                   </div>
+                 )}
+
+                 <form 
+                   onSubmit={(e) => {
+                     // Ensure programId is injected right before submit if not set
+                     if (activeProgForModules?.id) {
+                       moduleForm.setData('programId', activeProgForModules.id.toString())
+                     }
+                     handleSaveModule(e)
+                   }} 
+                   className="space-y-4"
+                 >
+                    <div className="flex gap-4">
+                      <div className="flex-[3]">
+                        <label className="text-[9px] font-black text-gray-400 mb-1 ml-1 uppercase block tracking-wider">Titre du module</label>
+                        <input type="text" required value={moduleForm.data.title} onChange={e => moduleForm.setData('title', e.target.value)} placeholder="Titre (ex: Les bases)" className="w-full px-5 py-3.5 bg-white border border-orange-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none transition-all shadow-sm" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[9px] font-black text-gray-400 mb-1 ml-1 uppercase block tracking-wider">Ordre</label>
+                        <input type="number" required value={moduleForm.data.order} onChange={e => moduleForm.setData('order', parseInt(e.target.value))} min="1" className="w-full px-5 py-3.5 bg-white border border-orange-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange outline-none transition-all shadow-sm text-center" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-gray-400 mb-1 ml-1 uppercase block tracking-wider">Description courte</label>
+                      <textarea required value={moduleForm.data.description} onChange={e => moduleForm.setData('description', e.target.value)} placeholder="Description du contenu..." className="w-full px-5 py-3.5 bg-white border border-orange-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-orange outline-none resize-none h-24" />
+                    </div>
+                    
+                    <div className="flex gap-4 pt-2">
+                      {editingModule && (
+                         <button type="button" onClick={() => { setEditingModule(null); moduleForm.reset(); }} className="flex-1 py-4 bg-white border border-orange-200 text-orange-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all italic">Annuler</button>
+                      )}
+                      <button type="submit" disabled={moduleForm.processing} className="flex-[2] py-4 bg-orange text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-lg shadow-orange-100 hover:bg-orange-600 transition-all disabled:opacity-50">
+                        {editingModule ? 'Enregistrer' : 'Ajouter au programme'}
+                      </button>
+                    </div>
+                 </form>
               </div>
 
               <div className="space-y-6">
@@ -611,14 +689,25 @@ export default function ProgrammesIndex() {
                    <span className="bg-gray-100 px-3 py-1 rounded-full text-[9px] font-black text-gray-400">Total: {activeProgForModules.modules?.length || 0}</span>
                 </div>
                 <div className="space-y-4">
-                   {(activeProgForModules.modules || []).length > 0 ? activeProgForModules.modules?.map((mod, i) => (
+                   {(activeProgForModules.modules || []).length > 0 ? activeProgForModules.modules?.sort((a,b) => a.order - b.order).map((mod) => (
                      <div key={mod.id} className="group p-5 bg-white border border-gray-100 rounded-[2rem] hover:shadow-xl hover:shadow-gray-200/50 transition-all flex items-center gap-5">
-                        <div className="w-12 h-12 bg-gray-50 text-gray-400 group-hover:bg-orange group-hover:text-white rounded-2xl flex items-center justify-center font-black italic transition-all">{i+1}</div>
+                        <div className="w-12 h-12 bg-gray-50 text-gray-400 group-hover:bg-orange group-hover:text-white rounded-2xl flex items-center justify-center font-black italic transition-all">{mod.order}</div>
                         <div className="flex-1">
                            <div className="font-bold text-gray-900 group-hover:text-orange transition-colors">{mod.title}</div>
                            <div className="text-[10px] text-gray-400 mt-1 line-clamp-1">{mod.description}</div>
                         </div>
-                        <button className="p-2 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                        <div className="flex opacity-0 group-hover:opacity-100 transition-all">
+                           <button onClick={() => {
+                              setEditingModule(mod);
+                              moduleForm.setData({
+                                title: mod.title,
+                                description: mod.description,
+                                order: mod.order,
+                                programId: mod.programId.toString()
+                              });
+                           }} className="p-2 text-gray-300 hover:text-blue-500 transition-all"><Edit2 className="w-4 h-4" /></button>
+                           <button onClick={() => promptDeleteProp('module', mod.id)} className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                        </div>
                      </div>
                    )) : (
                      <div className="py-12 text-center text-gray-300 text-[10px] font-black uppercase tracking-widest italic border-2 border-dashed border-gray-50 rounded-[2.5rem]">Aucun module pour le moment</div>

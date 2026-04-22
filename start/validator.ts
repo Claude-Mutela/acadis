@@ -40,6 +40,11 @@ vine.messagesProvider = new SimpleMessagesProvider({
   // Champs spécifiques
   'name.required': "L'intitulé est obligatoire.",
   'name.minLength': "L'intitulé doit contenir au moins {{ min }} caractères.",
+  'title.required': "Le titre est obligatoire.",
+  'title.minLength': "Le titre doit contenir au moins {{ min }} caractères.",
+  'order.required': "Le numéro d'ordre est obligatoire.",
+  'order.number': "Le numéro d'ordre doit être un nombre valide.",
+  'order.min': "Le numéro d'ordre doit être supérieur ou égal à {{ min }}.",
   'description.required': 'La description est obligatoire.',
   'description.minLength': 'La description doit contenir au moins {{ min }} caractères.',
   'presentation.required': 'La présentation synthétique est obligatoire.',

@@ -61,6 +61,11 @@ router.post('/administration/programmes/vacations', [controllers.Vacations, 'sto
 router.put('/administration/programmes/vacations/:id', [controllers.Vacations, 'update']).as('admin.programmes.vacations.update')
 router.delete('/administration/programmes/vacations/:id', [controllers.Vacations, 'destroy']).as('admin.programmes.vacations.destroy')
 
+// Modules
+router.post('/administration/programmes/modules', [controllers.Modules, 'store']).as('admin.programmes.modules.store')
+router.put('/administration/programmes/modules/:id', [controllers.Modules, 'update']).as('admin.programmes.modules.update')
+router.delete('/administration/programmes/modules/:id', [controllers.Modules, 'destroy']).as('admin.programmes.modules.destroy')
+
 // Planning
 router.on('/administration/planning').renderInertia('administration/planning/index', {}).as('admin.planning.index')
 // Profil
