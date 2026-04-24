@@ -101,5 +101,12 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'startDate.date': "La date de début doit être une date valide.",
   'endDate.required': "La date de fin est obligatoire.",
   'endDate.date': "La date de fin doit être une date valide.",
+
+  // Planning
+  'type.required': "Le type de session est obligatoire.",
+  'type.enum': "Le type sélectionné est invalide.",
+  'capacity.required': "La capacité (places totales) est obligatoire.",
+  'capacity.number': "La capacité doit être un nombre valide.",
+  'capacity.min': "La capacité ne peut pas être négative."
 })
 
