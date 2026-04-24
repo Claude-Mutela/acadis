@@ -71,5 +71,35 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'endTime.required': "L'heure de fin est obligatoire.",
   'startTime.regex': "Le format de l'heure de début doit être HH:MM.",
   'endTime.regex': "Le format de l'heure de fin doit être HH:MM.",
+
+  // Utilisateurs & Formateurs
+  'firstName.required': "Le prénom est obligatoire.",
+  'firstName.minLength': "Le prénom doit contenir au moins {{ min }} caractères.",
+  'firstName.maxLength': "Le prénom ne peut pas dépasser {{ max }} caractères.",
+  'lastName.required': "Le nom de famille est obligatoire.",
+  'lastName.minLength': "Le nom de famille doit contenir au moins {{ min }} caractères.",
+  'lastName.maxLength': "Le nom de famille ne peut pas dépasser {{ max }} caractères.",
+  'email.required': "L'adresse email est obligatoire.",
+  'email.email': "L'adresse email doit être valide.",
+  'email.unique': "Cette adresse email est déjà utilisée.",
+  'password.required': "Le mot de passe est obligatoire.",
+  'password.minLength': "Le mot de passe doit contenir au moins {{ min }} caractères.",
+  'password.maxLength': "Le mot de passe ne peut pas dépasser {{ max }} caractères.",
+  'role.required': "Le rôle est obligatoire.",
+  'role.enum': "Le rôle sélectionné est invalide.",
+  'status.required': "Le statut est obligatoire.",
+  'status.enum': "Le statut sélectionné est invalide.",
+  'gender.required': "Le sexe est obligatoire.",
+  'gender.enum': "Le sexe doit être Homme ou Femme.",
+  'homeChurch.required': "L'église d'attache est obligatoire.",
+  'specialization.required': "La spécialisation est obligatoire.",
+
+  // Cohortes
+  'slug.required': "Le slug est obligatoire.",
+  'slug.unique': "Ce slug est déjà utilisé.",
+  'startDate.required': "La date de début est obligatoire.",
+  'startDate.date': "La date de début doit être une date valide.",
+  'endDate.required': "La date de fin est obligatoire.",
+  'endDate.date': "La date de fin doit être une date valide.",
 })
 

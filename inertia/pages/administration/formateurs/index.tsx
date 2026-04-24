@@ -316,6 +316,7 @@ export default function FormateursIndex() {
                       </label>
                     ))}
                   </div>
+                  {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender}</p>}
                 </div>
 
                 {/* Église */}

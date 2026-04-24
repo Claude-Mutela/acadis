@@ -235,6 +235,7 @@ export default function CohortesIndex() {
                   placeholder="nom-de-la-cohorte"
                 />
                 <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">Généré à partir du nom</p>
+                {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
