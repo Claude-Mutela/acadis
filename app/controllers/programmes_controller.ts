@@ -15,6 +15,7 @@ export default class ProgrammesController {
       .preload('cohorts')
       .preload('trainer', (q) => q.preload('user'))
       .preload('modules')
+      .preload('manuels')
       .orderBy('createdAt', 'desc')
 
     const categories = await ProgramCategory.query().orderBy('name', 'asc')
