@@ -13,7 +13,7 @@ type Trainer = { id: number, userId: number, user: User }
 type Categorie = { id: number, name: string, description: string | null }
 type Cohort = { id: number, name: string }
 type BaseModule = { id: number, title: string, description: string, order: number, programId: number }
-type BaseManuel = { id: number, title: string, description: string, price: number, coverImage: string | null, fileUrl: string, isPublished: boolean, programId: number }
+type BaseManuel = { id: number, title: string, description: string, price: number, coverImage: string | null, file: string, fileUrl: string | null, isPublished: boolean, programId: number }
 type Vacation = { id: number, name: string, cohortId: number, day: string, startTime: string, endTime: string, programs?: Programme[] }
 
 type Programme = {
@@ -50,7 +50,7 @@ export default function ProgrammesIndex() {
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false)
   const [isProgModalOpen, setIsProgModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'cat' | 'prog' | 'vacation' | 'module', id: number } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'cat' | 'prog' | 'vacation' | 'module' | 'manuel', id: number } | null>(null)
 
   // Modales spécifiques
   const [activeProgForModules, setActiveProgForModules] = useState<Programme | null>(null)
@@ -80,30 +80,59 @@ export default function ProgrammesIndex() {
     }
   }
 
-  // État local pour le formulaire de manuel (Stub)
-  const [manuelFormData, setManuelFormData] = useState({
-    title: '',
-    price: '',
-    description: '',
-    isPublished: false,
-    coverFile: null as File | null,
-    pdfFile: null as File | null
-  })
+  // ── Logic: Manuels (useForm) ────────────────────────────────────────────────
+  const [editingManuel, setEditingManuel] = useState<BaseManuel | null>(null)
   const [manuelCoverPreview, setManuelCoverPreview] = useState<string | null>(null)
   const manualCoverInputRef = useRef<HTMLInputElement>(null)
   const manualPdfInputRef = useRef<HTMLInputElement>(null)
+
+  const manuelForm = useForm({
+    title: '',
+    price: 0,
+    description: '',
+    isPublished: false,
+    coverImage: null as File | null,
+    file: null as File | null,
+    fileUrl: '',
+    programId: ''
+  })
 
   const handleManuelFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'cover' | 'pdf') => {
     const file = e.target.files?.[0]
     if (!file) return
 
     if (type === 'cover') {
-      setManuelFormData(prev => ({ ...prev, coverFile: file }))
+      manuelForm.setData('coverImage', file)
       const reader = new FileReader()
       reader.onloadend = () => setManuelCoverPreview(reader.result as string)
       reader.readAsDataURL(file)
     } else {
-      setManuelFormData(prev => ({ ...prev, pdfFile: file }))
+      manuelForm.setData('file', file)
+    }
+  }
+
+  const handleSaveManuel = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!activeProgForManuels?.id) return
+
+    if (editingManuel) {
+      // @ts-ignore
+      manuelForm.post(`/administration/programmes/manuels/${editingManuel.id}?_method=PUT`, {
+        forceFormData: true,
+        onSuccess: () => { 
+          setEditingManuel(null); 
+          setManuelCoverPreview(null);
+          manuelForm.reset(); 
+        }
+      })
+    } else {
+      manuelForm.post('/administration/programmes/manuels', {
+        forceFormData: true,
+        onSuccess: () => {
+          setManuelCoverPreview(null);
+          manuelForm.reset();
+        }
+      })
     }
   }
 
@@ -203,7 +232,7 @@ export default function ProgrammesIndex() {
       if (refreshed) setActiveProgForModules(refreshed)
     }
     if (activeProgForManuels) {
-      const refreshed = programs.find(p => p.id === activeProgForManuels.id)
+      const refreshed = (programs || []).find(p => p.id === activeProgForManuels.id)
       if (refreshed) setActiveProgForManuels(refreshed)
     }
   }, [programs])
@@ -296,7 +325,7 @@ export default function ProgrammesIndex() {
     }
   }
 
-  const promptDeleteProp = (type: 'cat' | 'prog' | 'vacation' | 'module', id: number) => {
+  const promptDeleteProp = (type: 'cat' | 'prog' | 'vacation' | 'module' | 'manuel', id: number) => {
     setDeleteTarget({ type, id })
     setIsDeleteModalOpen(true)
   }
@@ -314,6 +343,8 @@ export default function ProgrammesIndex() {
       router.delete(`/administration/programmes/vacations/${deleteTarget.id}`, { onSuccess: () => setIsDeleteModalOpen(false) })
     } else if (deleteTarget.type === 'module') {
       router.delete(`/administration/programmes/modules/${deleteTarget.id}`, { onSuccess: () => setIsDeleteModalOpen(false) })
+    } else if (deleteTarget.type === 'manuel') {
+      router.delete(`/administration/programmes/manuels/${deleteTarget.id}`, { onSuccess: () => setIsDeleteModalOpen(false) })
     }
   }
 
@@ -732,34 +763,61 @@ export default function ProgrammesIndex() {
                   BIBLIOTHÈQUE / MANUELS
                 </h3>
               </div>
-              <button onClick={() => { setActiveProgForManuels(null); setManuelCoverPreview(null); }} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><X className="w-6 h-6 text-gray-400" /></button>
+              <button onClick={() => { setActiveProgForManuels(null); setEditingManuel(null); setManuelCoverPreview(null); manuelForm.reset(); }} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><X className="w-6 h-6 text-gray-400" /></button>
             </div>
             
             <div className="p-8 overflow-y-auto flex-1 space-y-10">
               <div className="bg-blue-50/30 p-8 rounded-[2.5rem] border border-blue-100/50 shadow-inner">
-                 <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans">Nouveau document technique</h4>
-                 <div className="space-y-5">
+                 <h4 className="text-[10px] font-black text-gray-400 mb-6 uppercase tracking-[0.3em] font-sans">{editingManuel ? 'Modifier le document' : 'Nouveau document technique'}</h4>
+                 
+                 {Object.keys(manuelForm.errors).length > 0 && (
+                   <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                     <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                     <div className="text-xs font-bold text-red-700">
+                       <p>Correctifs nécessaires :</p>
+                       {Object.values(manuelForm.errors).map((err, idx) => <span key={idx} className="block italic text-[10px]">- {err}</span>)}
+                     </div>
+                   </div>
+                 )}
+
+                 <form 
+                   onSubmit={(e) => {
+                     if (activeProgForManuels?.id) {
+                       manuelForm.setData('programId', activeProgForManuels.id.toString())
+                     }
+                     handleSaveManuel(e)
+                   }} 
+                   className="space-y-5"
+                 >
                     
                     {/* Preview Section */}
                     {manuelCoverPreview && (
                       <div className="relative w-24 h-32 mx-auto rounded-xl overflow-hidden shadow-lg border-2 border-blue-400 animate-in fade-in zoom-in duration-300">
                         <img src={manuelCoverPreview} className="w-full h-full object-cover" alt="" />
-                        <button onClick={() => setManuelCoverPreview(null)} className="absolute top-1 right-1 bg-white/80 rounded-full p-0.5"><X className="w-3 h-3 text-red-500" /></button>
+                        <button type="button" onClick={() => { setManuelCoverPreview(null); manuelForm.setData('coverImage', null); }} className="absolute top-1 right-1 bg-white/80 rounded-full p-0.5"><X className="w-3 h-3 text-red-500" /></button>
                       </div>
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 text-center">
+                         <label className="text-[9px] font-black text-gray-400 mb-1 uppercase block tracking-wider">Description de l'ouvrage</label>
+                         <textarea required value={manuelForm.data.description} onChange={e => manuelForm.setData('description', e.target.value)} className="w-full px-5 py-3.5 bg-white border border-blue-100 rounded-2xl text-[11px] font-bold outline-none resize-none h-20" placeholder="Brève description..." />
+                      </div>
                       <div className="col-span-2">
-                        <label className="text-[9px] font-black text-gray-400 mb-1 block">Titre de l'ouvrage</label>
-                        <input type="text" value={manuelFormData.title} onChange={e => setManuelFormData({...manuelFormData, title: e.target.value})} className="w-full px-5 py-3.5 bg-white border border-blue-100 rounded-2xl text-[11px] font-bold outline-none" placeholder="..." />
+                        <label className="text-[9px] font-black text-gray-400 mb-1 block uppercase tracking-wider">Titre de l'ouvrage</label>
+                        <input type="text" required value={manuelForm.data.title} onChange={e => manuelForm.setData('title', e.target.value)} className="w-full px-5 py-3.5 bg-white border border-blue-100 rounded-2xl text-[11px] font-bold outline-none" placeholder="..." />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[9px] font-black text-gray-400 mb-1 block uppercase tracking-wider">Lien externe du fichier (Optionnel)</label>
+                        <input type="url" value={manuelForm.data.fileUrl || ''} onChange={e => manuelForm.setData('fileUrl', e.target.value)} className="w-full px-5 py-3.5 bg-white border border-blue-100 rounded-2xl text-[11px] font-bold outline-none" placeholder="Lien Cloudinary ou autre (non obligatoire)" />
                       </div>
                       <div>
-                        <label className="text-[9px] font-black text-gray-400 mb-1 block">Prix ($)</label>
-                        <input type="number" value={manuelFormData.price} onChange={e => setManuelFormData({...manuelFormData, price: e.target.value})} placeholder="0" className="w-full px-5 py-3 bg-white border border-blue-100 rounded-2xl text-[11px] font-bold outline-none" />
+                        <label className="text-[9px] font-black text-gray-400 mb-1 block uppercase tracking-wider">Prix ($)</label>
+                        <input type="number" required value={manuelForm.data.price} onChange={e => manuelForm.setData('price', parseInt(e.target.value))} placeholder="0" className="w-full px-5 py-3 bg-white border border-blue-100 rounded-2xl text-[11px] font-bold outline-none" />
                       </div>
                       <div className="flex items-end pb-1">
                          <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" checked={manuelFormData.isPublished} onChange={e => setManuelFormData({...manuelFormData, isPublished: e.target.checked})} className="w-4 h-4 rounded text-blue-600 focus:ring-0 border-blue-200" />
+                            <input type="checkbox" checked={manuelForm.data.isPublished} onChange={e => manuelForm.setData('isPublished', e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-0 border-blue-200" />
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Publier</span>
                          </label>
                       </div>
@@ -769,19 +827,26 @@ export default function ProgrammesIndex() {
                        <input type="file" ref={manualCoverInputRef} className="hidden" accept="image/*" onChange={e => handleManuelFileChange(e, 'cover')} />
                        <input type="file" ref={manualPdfInputRef} className="hidden" accept="application/pdf" onChange={e => handleManuelFileChange(e, 'pdf')} />
                        
-                       <button onClick={() => manualCoverInputRef.current?.click()} className={`flex-1 py-3 px-4 rounded-2xl text-[9px] font-black transition-all flex items-center justify-center gap-2 border ${manuelFormData.coverFile ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-blue-100 text-gray-400 hover:bg-blue-50'}`}>
-                          {manuelFormData.coverFile ? <Save className="w-3.5 h-3.5" /> : <ImageIcon className="w-3.5 h-3.5" />} 
-                          {manuelFormData.coverFile ? 'COUVERTURE OK' : 'COUVERTURE (IMG)'}
+                       <button type="button" onClick={() => manualCoverInputRef.current?.click()} className={`flex-1 py-3 px-4 rounded-2xl text-[9px] font-black transition-all flex items-center justify-center gap-2 border ${manuelForm.data.coverImage ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-blue-100 text-gray-400 hover:bg-blue-50'}`}>
+                          {manuelForm.data.coverImage ? <Save className="w-3.5 h-3.5" /> : <ImageIcon className="w-3.5 h-3.5" />} 
+                          {manuelForm.data.coverImage ? 'IMAGE OK' : 'COUVERTURE'}
                        </button>
 
-                       <button onClick={() => manualPdfInputRef.current?.click()} className={`flex-1 py-3 px-4 rounded-2xl text-[9px] font-black transition-all flex items-center justify-center gap-2 border ${manuelFormData.pdfFile ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-blue-100 text-gray-400 hover:bg-blue-50'}`}>
+                       <button type="button" onClick={() => manualPdfInputRef.current?.click()} className={`flex-1 py-3 px-4 rounded-2xl text-[9px] font-black transition-all flex items-center justify-center gap-2 border ${manuelForm.data.file ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-blue-100 text-gray-400 hover:bg-blue-50'}`}>
                           <UploadCloud className="w-3.5 h-3.5" /> 
-                          {manuelFormData.pdfFile ? 'PDF CHARGÉ' : 'FICHIER PDF'}
+                          {manuelForm.data.file ? 'PDF CHARGÉ' : 'FICHIER PDF'}
                        </button>
                     </div>
                     
-                    <button className="w-full py-4 bg-blue-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Ajouter à la bibliothèque</button>
-                 </div>
+                    <div className="flex gap-4 pt-2">
+                       {editingManuel && (
+                          <button type="button" onClick={() => { setEditingManuel(null); setManuelCoverPreview(null); manuelForm.reset(); }} className="flex-1 py-4 bg-white border border-blue-200 text-blue-400 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all italic">Annuler</button>
+                       )}
+                       <button type="submit" disabled={manuelForm.processing} className="flex-[2] py-4 bg-blue-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50">
+                        {editingManuel ? 'Enregistrer' : 'Ajouter à la bibliothèque'}
+                       </button>
+                    </div>
+                 </form>
               </div>
 
               <div className="space-y-6">
@@ -800,8 +865,21 @@ export default function ProgrammesIndex() {
                            </div>
                         </div>
                         <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                           <button className="p-2 text-gray-300 hover:text-blue-600 transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
-                           <button className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                           <button onClick={() => {
+                              setEditingManuel(man);
+                              setManuelCoverPreview(man.coverImage);
+                              manuelForm.setData({
+                                title: man.title,
+                                price: man.price,
+                                description: man.description,
+                                isPublished: man.isPublished,
+                                coverImage: null,
+                                file: null,
+                                fileUrl: man.fileUrl || '',
+                                programId: man.programId.toString()
+                              });
+                           }} className="p-2 text-gray-300 hover:text-blue-600 transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
+                           <button onClick={() => promptDeleteProp('manuel', man.id)} className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                      </div>
                    )) : (
