@@ -62,6 +62,21 @@ export class CohortSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class CohortPlanningSchema extends BaseModel {
+  static $columns = ['cohortId', 'createdAt', 'id', 'planningId', 'updatedAt'] as const
+  $columns = CohortPlanningSchema.$columns
+  @column()
+  declare cohortId: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare planningId: number | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class CohortProgramSchema extends BaseModel {
   static $columns = ['cohortId', 'createdAt', 'id', 'programId', 'updatedAt'] as const
   $columns = CohortProgramSchema.$columns
@@ -256,6 +271,27 @@ export class PaymentSchema extends BaseModel {
   declare status: string
   @column()
   declare studentId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class PlanningSchema extends BaseModel {
+  static $columns = ['capacity', 'createdAt', 'endDate', 'id', 'startDate', 'status', 'type', 'updatedAt'] as const
+  $columns = PlanningSchema.$columns
+  @column()
+  declare capacity: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column.date()
+  declare endDate: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column.date()
+  declare startDate: DateTime
+  @column()
+  declare status: string
+  @column()
+  declare type: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }
