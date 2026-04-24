@@ -190,7 +190,7 @@ export class ManualPurchaseSchema extends BaseModel {
 }
 
 export class ManuelSchema extends BaseModel {
-  static $columns = ['coverImage', 'createdAt', 'description', 'fileUrl', 'id', 'isPublished', 'price', 'programId', 'title', 'updatedAt'] as const
+  static $columns = ['coverImage', 'createdAt', 'description', 'file', 'fileUrl', 'id', 'isPublished', 'price', 'programId', 'title', 'updatedAt'] as const
   $columns = ManuelSchema.$columns
   @column()
   declare coverImage: string | null
@@ -199,7 +199,9 @@ export class ManuelSchema extends BaseModel {
   @column()
   declare description: string
   @column()
-  declare fileUrl: string
+  declare file: string
+  @column()
+  declare fileUrl: string | null
   @column({ isPrimary: true })
   declare id: number
   @column()
