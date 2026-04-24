@@ -72,7 +72,10 @@ router.put('/administration/programmes/manuels/:id', [controllers.Manuels, 'upda
 router.delete('/administration/programmes/manuels/:id', [controllers.Manuels, 'destroy']).as('admin.programmes.manuels.destroy')
 
 // Planning
-router.on('/administration/planning').renderInertia('administration/planning/index', {}).as('admin.planning.index')
+router.get('/administration/planning', [controllers.Plannings, 'index']).as('admin.planning.index')
+router.post('/administration/planning', [controllers.Plannings, 'store']).as('admin.planning.store')
+router.put('/administration/planning/:id', [controllers.Plannings, 'update']).as('admin.planning.update')
+router.delete('/administration/planning/:id', [controllers.Plannings, 'destroy']).as('admin.planning.destroy')
 // Profil
 router.on('/administration/profil').renderInertia('administration/profil', {}).as('admin.profil')
 // Cohortes
