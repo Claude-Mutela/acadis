@@ -66,6 +66,11 @@ router.post('/administration/programmes/modules', [controllers.Modules, 'store']
 router.put('/administration/programmes/modules/:id', [controllers.Modules, 'update']).as('admin.programmes.modules.update')
 router.delete('/administration/programmes/modules/:id', [controllers.Modules, 'destroy']).as('admin.programmes.modules.destroy')
 
+// Manuels
+router.post('/administration/programmes/manuels', [controllers.Manuels, 'store']).as('admin.programmes.manuels.store')
+router.put('/administration/programmes/manuels/:id', [controllers.Manuels, 'update']).as('admin.programmes.manuels.update')
+router.delete('/administration/programmes/manuels/:id', [controllers.Manuels, 'destroy']).as('admin.programmes.manuels.destroy')
+
 // Planning
 router.on('/administration/planning').renderInertia('administration/planning/index', {}).as('admin.planning.index')
 // Profil
