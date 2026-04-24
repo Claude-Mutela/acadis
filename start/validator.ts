@@ -24,6 +24,7 @@ VineDate.transform((value) => DateTime.fromJSDate(value))
 
 vine.messagesProvider = new SimpleMessagesProvider({
   'required': 'Le champ {{ field }} est obligatoire.',
+  'defined': 'Le champ {{ field }} est obligatoire.',
   'string': 'Le champ {{ field }} doit être une chaîne de caractères.',
   'minLength': 'Le champ {{ field }} doit contenir au moins {{ min }} caractères.',
   'maxLength': 'Le champ {{ field }} ne peut pas dépasser {{ max }} caractères.',
@@ -45,6 +46,14 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'order.required': "Le numéro d'ordre est obligatoire.",
   'order.number': "Le numéro d'ordre doit être un nombre valide.",
   'order.min': "Le numéro d'ordre doit être supérieur ou égal à {{ min }}.",
+  'price.required': "Le prix est obligatoire.",
+  'price.number': "Le prix doit être un nombre valide.",
+  'price.min': "Le prix ne peut pas être négatif.",
+  'file.required': "Le fichier PDF est obligatoire.",
+  'file.file.extname': "Le fichier doit être au format PDF.",
+  'file.file.size': "Le fichier est trop lourd (max 20Mo).",
+  'coverImage.extnames': "L'image doit être au format JPG, PNG ou WEBP.",
+  'coverImage.size': "L'image est trop lourde (max 5Mo).",
   'description.required': 'La description est obligatoire.',
   'description.minLength': 'La description doit contenir au moins {{ min }} caractères.',
   'presentation.required': 'La présentation synthétique est obligatoire.',
