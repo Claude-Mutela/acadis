@@ -3,6 +3,7 @@ import { manyToMany, hasMany } from '@adonisjs/lucid/orm'
 import type { ManyToMany, HasMany } from '@adonisjs/lucid/types/relations'
 import Program from './program.js'
 import Vacation from './vacation.js'
+import Planning from './planning.js'
 
 export default class Cohort extends CohortSchema {
     @manyToMany(() => Program, {
@@ -12,4 +13,9 @@ export default class Cohort extends CohortSchema {
 
     @hasMany(() => Vacation)
     declare vacations: HasMany<typeof Vacation>
+
+    @manyToMany(() => Planning, {
+        pivotTable: 'cohort_plannings',
+    })
+    declare plannings: ManyToMany<typeof Planning>
 }
