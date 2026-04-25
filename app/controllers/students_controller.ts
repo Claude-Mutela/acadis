@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
 import Cohort from '#models/cohort'
 import Program from '#models/program'
+import Department from '#models/department'
 
 export default class StudentsController {
   async index({ inertia }: HttpContext) {
@@ -18,14 +19,22 @@ export default class StudentsController {
       })
       .orderBy('last_name', 'asc')
 
-    const cohorts = await Cohort.query().preload('programs').orderBy('name', 'asc')
-    const allPrograms = await Program.query().orderBy('name', 'asc')
+    const cohorts = await Cohort.query()
+      .preload('programs', (q) => q.preload('vacations'))
+      .orderBy('name', 'asc')
+    
+    const allPrograms = await Program.query()
+      .preload('vacations')
+      .orderBy('name', 'asc')
+      
+    const departments = await Department.query().orderBy('name', 'asc')
 
     return inertia.render('administration/etudiants/index', {
       students,
       filters: {
         cohorts,
-        allPrograms
+        allPrograms,
+        departments
       }
     } as any)
   }

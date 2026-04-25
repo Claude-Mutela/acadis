@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Head } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
 import { 
@@ -28,6 +28,7 @@ interface PageProps {
   filters: {
     cohorts: any[]
     allPrograms: any[]
+    departments: any[]
   }
 }
 
@@ -80,13 +81,55 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
-  // États pour les Modales
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [currentStudent, setCurrentStudent] = useState<StudentProp | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
-  // ── Logique des Filtres Dynamiques ──────────────────────────────────────────
+  // État du formulaire d'inscription
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    gender: 'M',
+    homeChurch: '',
+    worker: false,
+    ministry: '',
+    address: '',
+    phoneNumber: '',
+    dateOfBirth: '',
+    cohortId: '',
+    programId: '',
+    planningId: '',
+    vacationId: '',
+    status: 'pending'
+  })
+
+  // ── Logique des Filtres Dynamiques (Modale) ──────────────────────────────
+  const modalPrograms = useMemo(() => {
+    if (!formData.cohortId) return []
+    const cohort = filters.cohorts.find(c => c.id.toString() === formData.cohortId.toString())
+    return cohort?.programs || []
+  }, [formData.cohortId, filters.cohorts])
+
+  const modalVacations = useMemo(() => {
+    if (!formData.programId) return []
+    const program = filters.allPrograms.find(p => p.id.toString() === formData.programId.toString())
+    // Filtrer les vacations par programme et éventuellement par cohorte
+    return program?.vacations || []
+  }, [formData.programId, filters.allPrograms])
+
+  // Reset dependent fields when parent changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, programId: '', vacationId: '' }))
+  }, [formData.cohortId])
+
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, vacationId: '' }))
+  }, [formData.programId])
+
+  // ── Logique des Filtres Dynamiques (Tableau) ────────────────────────────────
   const availablePrograms = useMemo(() => {
     const cohort = formattedCohorts.find(c => c.name === filterCohort)
     const programs = cohort ? cohort.programNames : filters.allPrograms.map(p => p.name)
@@ -134,14 +177,50 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
   }
 
   // ── Actions CRUD ─────────────────────────────────────────────────────────────
-  // Actions CRUD (Placeholders pour l'instant)
   const openCreateModal = () => {
-    // setIsModalOpen(true)
-    alert("La création manuelle d'étudiants sera implémentée avec la logique métier.")
+    setModalMode('create')
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      gender: 'M',
+      homeChurch: '',
+      worker: false,
+      ministry: '',
+      address: '',
+      phoneNumber: '',
+      dateOfBirth: '',
+      cohortId: '',
+      programId: '',
+      planningId: '',
+      vacationId: '',
+      status: 'pending'
+    })
+    setIsModalOpen(true)
   }
 
   const openEditModal = (student: StudentProp) => {
+    setModalMode('edit')
     setCurrentStudent(student)
+    setFormData({
+      firstName: student.prenom,
+      lastName: student.nom,
+      email: student.email,
+      password: '', // On ne touche pas au password en édition ici
+      gender: 'M', // Info non présente dans StudentProp actuellement, à améliorer plus tard
+      homeChurch: student.eglise,
+      worker: student.estOuvrier,
+      ministry: student.departement,
+      address: '', 
+      phoneNumber: student.telephone,
+      dateOfBirth: '', 
+      cohortId: '', // Nécessiterait l'ID réel
+      programId: '', 
+      planningId: '', 
+      vacationId: student.vacation.toLowerCase(),
+      status: student.statut === 'Confirmé' ? 'confirmed' : 'pending'
+    })
     setIsModalOpen(true)
   }
 
@@ -357,7 +436,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       </div>
 
       {/* 5. Modal Formulaire (Ajout / Modification) */}
-      {isModalOpen && currentStudent && (
+      {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
           <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
@@ -373,189 +452,223 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
             </div>
 
             <div className="overflow-y-auto flex-1 p-6">
-              <form id="studentUpdateForm" onSubmit={handleSaveStudent} className="space-y-6">
+              <form id="studentRegistrationForm" onSubmit={handleSaveStudent} className="space-y-8">
                 
-                {/* Informations de base */}
+                {/* 1. SECTION IDENTITÉ */}
                 <div>
-                  <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Informations Personnelles</h4>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-orange/10 text-orange flex items-center justify-center font-bold text-xs">01</div>
+                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">Identité du Compte</h4>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Prénom</label>
-                      <div className="relative">
-                        <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="text" required
-                          value={currentStudent.prenom} 
-                          onChange={e => setCurrentStudent({...currentStudent, prenom: e.target.value})}
-                          className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
-                        />
-                      </div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Prénom</label>
+                      <input 
+                        type="text" required
+                        placeholder="Ex: Jean"
+                        value={formData.firstName} 
+                        onChange={e => setFormData({...formData, firstName: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Nom</label>
-                      <div className="relative">
-                        <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="text" required
-                          value={currentStudent.nom} 
-                          onChange={e => setCurrentStudent({...currentStudent, nom: e.target.value})}
-                          className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
-                        />
-                      </div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Nom</label>
+                      <input 
+                        type="text" required
+                        placeholder="Ex: Dupont"
+                        value={formData.lastName} 
+                        onChange={e => setFormData({...formData, lastName: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Email</label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Email</label>
+                      <input 
+                        type="email" required
+                        placeholder="jean.dupont@exemple.com"
+                        value={formData.email} 
+                        onChange={e => setFormData({...formData, email: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+                    {modalMode === 'create' && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Mot de passe temporaire</label>
                         <input 
-                          type="email" required
-                          value={currentStudent.email} 
-                          onChange={e => setCurrentStudent({...currentStudent, email: e.target.value})}
-                          className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
+                          type="password" required
+                          placeholder="••••••••"
+                          value={formData.password} 
+                          onChange={e => setFormData({...formData, password: e.target.value})}
+                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
                         />
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Téléphone</label>
-                      <div className="relative">
-                        <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="tel" required
-                          value={currentStudent.telephone} 
-                          onChange={e => setCurrentStudent({...currentStudent, telephone: e.target.value})}
-                          className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
-                        />
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Parcours Spirituel */}
+                {/* 2. SECTION PROFIL DISCIPLE */}
                 <div>
-                  <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Parcours Spirituel</h4>
-                  <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-orange/10 text-orange flex items-center justify-center font-bold text-xs">02</div>
+                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">Profil du Disciple</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Église d'attache</label>
-                      <div className="relative">
-                        <Home className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="text" required
-                          value={currentStudent.eglise} 
-                          onChange={e => setCurrentStudent({...currentStudent, eglise: e.target.value})}
-                          className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
-                        />
-                      </div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Genre</label>
+                      <select 
+                        value={formData.gender}
+                        onChange={e => setFormData({...formData, gender: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
+                      >
+                        <option value="M">Masculin</option>
+                        <option value="F">Féminin</option>
+                      </select>
                     </div>
-                    
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 border p-4 rounded-xl border-gray-100 bg-gray-50/50">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Téléphone</label>
+                      <input 
+                        type="tel" required
+                        placeholder="+243..."
+                        value={formData.phoneNumber} 
+                        onChange={e => setFormData({...formData, phoneNumber: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Date de naissance</label>
+                      <input 
+                        type="date" required
+                        value={formData.dateOfBirth} 
+                        onChange={e => setFormData({...formData, dateOfBirth: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Église d'attache</label>
+                      <input 
+                        type="text" required
+                        placeholder="Nom de l'église"
+                        value={formData.homeChurch} 
+                        onChange={e => setFormData({...formData, homeChurch: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Adresse Physique</label>
+                      <textarea 
+                        rows={2}
+                        placeholder="Adresse complète..."
+                        value={formData.address} 
+                        onChange={e => setFormData({...formData, address: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all resize-none"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100">
                       <div className="flex-1">
                         <label className="flex items-center gap-3 cursor-pointer">
                           <input 
                             type="checkbox"
-                            checked={currentStudent.estOuvrier}
-                            onChange={e => setCurrentStudent({...currentStudent, estOuvrier: e.target.checked})}
-                            className="w-5 h-5 text-orange bg-white border-gray-300 rounded focus:ring-orange"
+                            checked={formData.worker}
+                            onChange={e => setFormData({...formData, worker: e.target.checked})}
+                            className="w-5 h-5 text-orange bg-white border-gray-300 rounded-lg focus:ring-orange"
                           />
-                          <span className="text-sm font-bold text-gray-900">L'étudiant est un ouvrier ?</span>
+                          <span className="text-sm font-bold text-gray-900">Est un ouvrier ?</span>
                         </label>
                       </div>
-                      
-                      {currentStudent.estOuvrier && (
+                      {formData.worker && (
                         <div className="flex-1">
-                          <label className="block text-xs font-bold text-gray-500 mb-1">Département d'affectation</label>
-                          <input 
-                            type="text" required={currentStudent.estOuvrier}
-                            placeholder="Ex: Multimédia, Protocole..."
-                            value={currentStudent.departement} 
-                            onChange={e => setCurrentStudent({...currentStudent, departement: e.target.value})}
-                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
-                          />
+                          <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Ministère / Département</label>
+                          <select 
+                            required={formData.worker}
+                            value={formData.ministry} 
+                            onChange={e => setFormData({...formData, ministry: e.target.value})}
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer"
+                          >
+                            <option value="">Choisir un ministère</option>
+                            {filters.departments.map(d => (
+                              <option key={d.id} value={d.name}>{d.name}</option>
+                            ))}
+                          </select>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Options de formation */}
+                {/* 3. SECTION ACADÉMIQUE */}
                 <div>
-                  <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Options Académiques</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Programme Assigné</label>
-                      <div className="relative">
-                        <BookOpen className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <select 
-                          value={currentStudent.programme} 
-                          onChange={e => setCurrentStudent({...currentStudent, programme: e.target.value})}
-                          className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
-                        >
-                          {filters.allPrograms.map(p => (
-                            <option key={p.id} value={p.name}>{p.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Format de la session</label>
-                      <div className="flex bg-gray-50 border border-gray-200 p-1 rounded-xl">
-                        {['Présentiel', 'En ligne'].map(opt => (
-                          <label key={opt} className="flex-1">
-                            <input 
-                              type="radio" name="session" value={opt} 
-                              checked={currentStudent.session === opt}
-                              onChange={e => setCurrentStudent({...currentStudent, session: e.target.value})}
-                              className="sr-only peer"
-                            />
-                            <div className="text-center py-2 text-sm font-medium text-gray-500 rounded-lg cursor-pointer peer-checked:bg-white peer-checked:text-black peer-checked:shadow-sm peer-checked:font-bold transition-all">
-                              {opt}
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-orange/10 text-orange flex items-center justify-center font-bold text-xs">03</div>
+                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">Inscription Académique</h4>
                   </div>
-                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Vacation</label>
-                      <div className="relative">
-                        <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <select 
-                          value={currentStudent.vacation} 
-                          onChange={e => setCurrentStudent({...currentStudent, vacation: e.target.value})}
-                          className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
-                        >
-                          <option value="Matin">Matin</option>
-                          <option value="Midi">Midi</option>
-                          <option value="Soir">Soir</option>
-                          <option value="Week-end">Week-end</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">Statut inscription</label>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Cohorte / Session</label>
                       <select 
-                        value={currentStudent.statut} 
-                        onChange={e => setCurrentStudent({...currentStudent, statut: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
+                        required
+                        value={formData.cohortId}
+                        onChange={e => setFormData({...formData, cohortId: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer"
                       >
-                         <option value="Actif">Actif</option>
-                         <option value="En attente">En attente</option>
-                         <option value="Inactif">Inactif</option>
+                        <option value="">Sélectionner une cohorte</option>
+                        {formattedCohorts.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Programme</label>
+                      <select 
+                        required
+                        disabled={!formData.cohortId}
+                        value={formData.programId}
+                        onChange={e => setFormData({...formData, programId: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+                      >
+                        <option value="">Choisir un programme</option>
+                        {modalPrograms.map((p: any) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Vacation</label>
+                      <select 
+                        required
+                        disabled={!formData.programId}
+                        value={formData.vacationId}
+                        onChange={e => setFormData({...formData, vacationId: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+                      >
+                        <option value="">Choisir la vacation</option>
+                        {modalVacations.map((v: any) => (
+                          <option key={v.id} value={v.id}>{v.day} ({v.startTime} - {v.endTime})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Statut Inscription</label>
+                      <select 
+                        value={formData.status}
+                        onChange={e => setFormData({...formData, status: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer"
+                      >
+                        <option value="pending">En attente</option>
+                        <option value="confirmed">Confirmé</option>
                       </select>
                     </div>
                   </div>
                 </div>
+
               </form>
             </div>
 
-            <div className="p-4 border-t border-gray-100 flex gap-3 bg-gray-50/50 flex-shrink-0">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-xl transition-colors">
+            <div className="p-6 border-t border-gray-100 flex gap-4 bg-gray-50/50 flex-shrink-0">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-2xl transition-all">
                 Annuler
               </button>
-              <button type="submit" form="studentUpdateForm" className="flex-1 py-3 bg-black hover:bg-gray-900 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-0.5">
-                {modalMode === 'create' ? 'Ajouter l\'étudiant' : 'Enregistrer les modifications'}
+              <button type="submit" form="studentRegistrationForm" className="flex-1 py-3 bg-black hover:bg-gray-900 text-white font-bold rounded-2xl shadow-xl transition-all hover:-translate-y-0.5 active:scale-95">
+                {modalMode === 'create' ? 'Inscrire l\'étudiant' : 'Enregistrer les modifications'}
               </button>
             </div>
           </div>
