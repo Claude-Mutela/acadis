@@ -2,7 +2,6 @@ import { DateTime } from 'luxon'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import User from './user.js'
-import Student from './student.js'
 
 export default class Temoignage extends BaseModel {
   @column({ isPrimary: true })
@@ -11,17 +10,8 @@ export default class Temoignage extends BaseModel {
   @column()
   declare userId: number | null
 
-  @column()
-  declare studentId: number | null
-
-  @column()
-  declare contenuTemoignage: string
-
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
-
-  @belongsTo(() => Student)
-  declare student: BelongsTo<typeof Student>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
