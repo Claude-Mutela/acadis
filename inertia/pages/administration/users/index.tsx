@@ -152,40 +152,25 @@ export default function UsersIndex() {
 
   // ── Rendu de l'UI ────────────────────────────────────────────────────────────
   return (
-    <AdminLayout title="Gestion des Utilisateurs">
+    <AdminLayout title="Utilisateurs" description="Gérez les accès et les profils des membres de la plateforme.">
       <Head title="Utilisateurs — Admin ACADIS" />
 
-      {/* 1. Header de Page */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Utilisateurs</h1>
-          <p className="text-gray-500 mt-1">Gérez les accès et les profils des membres de la plateforme.</p>
-        </div>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5"
-        >
-          <Plus className="w-4 h-4" />
-          Ajouter un utilisateur
-        </button>
-      </div>
-
-      {/* 2. Barre de Recherche et Filtres */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
+      {/* 1. Actions Rapides (Recherche, Filtre, Ajout) */}
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex-1 relative w-full md:max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+            <Search className="h-4 w-4 text-gray-400" />
           </div>
           <input
             type="text"
-            placeholder="Rechercher par nom, prénom ou email..."
+            placeholder="Rechercher par nom, prénom..."
             value={search}
             onChange={handleSearch}
-            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm transition-colors"
+            className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm transition-colors"
           />
         </div>
-
-        <div className="sm:w-64 relative">
+        
+        <div className="w-full md:w-48 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Filter className="h-4 w-4 text-gray-400" />
           </div>
@@ -199,6 +184,14 @@ export default function UsersIndex() {
             ))}
           </select>
         </div>
+
+        <button 
+          onClick={openCreateModal}
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5 ml-auto"
+        >
+          <Plus className="w-4 h-4" />
+          Ajouter un utilisateur
+        </button>
       </div>
 
       {/* 3. Tableau Global (Card) */}

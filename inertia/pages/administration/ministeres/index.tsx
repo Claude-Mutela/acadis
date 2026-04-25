@@ -74,39 +74,29 @@ export default function MinisteresIndex() {
   }
 
   return (
-    <AdminLayout title="Gestion des Ministères">
+    <AdminLayout title="Ministères" description="Gérez la liste officielle des ministères et départements de l'académie.">
       <Head title="Ministères — Administration" />
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-            <Landmark className="w-8 h-8 text-brand-orange" />
-            Ministères
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Gérez la liste officielle des ministères et départements de l'académie.</p>
-        </div>
-        
-        <button 
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-brand-black hover:bg-brand-orange text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-brand-orange/10 hover:shadow-brand-orange/30 group"
-        >
-          <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-          Ajouter un Ministère
-        </button>
-      </div>
-
-      {/* Barre de recherche */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      {/* Actions Rapides */}
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex-1 relative w-full md:max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input 
             type="text"
             placeholder="Rechercher un ministère..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all"
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all bg-gray-50 hover:bg-white text-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        
+        <button 
+          onClick={openCreateModal}
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-brand-black hover:bg-brand-orange text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-brand-orange/10 hover:shadow-brand-orange/30 group ml-auto"
+        >
+          <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+          Ajouter un Ministère
+        </button>
       </div>
 
       {/* Tableau des données */}

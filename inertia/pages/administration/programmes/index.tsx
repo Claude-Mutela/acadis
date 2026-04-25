@@ -355,49 +355,42 @@ export default function ProgrammesIndex() {
   )
 
   return (
-    <AdminLayout title="Gestion du Catalogue">
+    <AdminLayout title="Programmes" description="Gérez les cursus de formation et leurs ressources pédagogiques.">
       <Head title="Programmes Administration — ACADIS" />
       
-      {/* 1. Header de Page */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">Programmes</h1>
-          <p className="text-gray-500 mt-1 font-medium italic">Gérez les cursus de formation et leurs ressources pédagogiques.</p>
+      {/* 1. Actions Rapides (Recherche, Filtre, Ajout) */}
+      <div className="flex flex-col xl:flex-row items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex-1 relative w-full xl:max-w-md">
+          <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text" placeholder="Rechercher un programme..."
+            value={searchProg} onChange={e => setSearchProg(e.target.value)}
+            className="block w-full pl-9 pr-3 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
+          />
         </div>
-        <div className="flex gap-3">
+        
+        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:ml-auto">
           <button 
             onClick={() => setIsCatModalOpen(true)}
-            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-sm border border-gray-200"
+            className="flex-1 xl:flex-none flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl text-xs transition-all shadow-sm border border-gray-200 uppercase tracking-wider"
           >
             <FolderTree className="w-4 h-4" />
             Catégories
           </button>
           <button 
             onClick={() => setIsVacationModalOpen(true)}
-            className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-sm border border-blue-100"
+            className="flex-1 xl:flex-none flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 px-5 rounded-xl text-xs transition-all shadow-sm border border-blue-100 uppercase tracking-wider"
           >
             <CalendarClock className="w-4 h-4" />
             Vacations
           </button>
           <button 
             onClick={() => openProgModal()}
-            className="flex items-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5"
+            className="w-full xl:w-auto flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-6 rounded-xl text-xs shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5 uppercase tracking-wider"
           >
             <Plus className="w-4 h-4" />
             Nouveau Programme
           </button>
-        </div>
-      </div>
-
-      {/* 2. Barre de Recherche */}
-      <div className="bg-white p-4 rounded-[1.5rem] shadow-sm border border-gray-100 mb-6 flex gap-4">
-        <div className="relative flex-1">
-          <Search className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text" placeholder="Rechercher un cours..."
-            value={searchProg} onChange={e => setSearchProg(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
-          />
         </div>
       </div>
 

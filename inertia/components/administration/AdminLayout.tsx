@@ -28,7 +28,7 @@ const navigation = [
   { name: 'Planning', href: '/administration/planning', icon: CalendarDays },
 ]
 
-export default function AdminLayout({ children, title = 'Administration' }: { children: React.ReactNode, title?: string }) {
+export default function AdminLayout({ children, title = 'Administration', description }: { children: React.ReactNode, title?: string, description?: string }) {
   const { url, props } = usePage<any>()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -107,13 +107,9 @@ export default function AdminLayout({ children, title = 'Administration' }: { ch
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="hidden sm:flex items-center bg-gray-100 rounded-xl px-4 py-2.5 text-sm w-96 border border-gray-200 focus-within:border-orange focus-within:ring-1 focus-within:ring-orange transition-all">
-              <Search className="w-4 h-4 text-gray-400 mr-2" />
-              <input 
-                type="text" 
-                placeholder="Rechercher (étudiant, paiement...)" 
-                className="bg-transparent border-none focus:outline-none focus:ring-0 text-gray-700 w-full"
-              />
+            <div className="hidden sm:block ml-4">
+              <h1 className="text-xl font-black text-gray-900 leading-none">{title}</h1>
+              {description && <p className="text-xs text-gray-500 mt-1 line-clamp-1">{description}</p>}
             </div>
           </div>
           

@@ -34,15 +34,9 @@ export default function AdminProfil() {
   }
 
   return (
-    <AdminLayout title="Mon ProfilPersonnel">
+    <AdminLayout title="Mon Profil" description="Gérez vos accès et vos informations personnelles administratives.">
       <Head title="Profil — Admin ACADIS" />
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Paramètres du Compte</h1>
-          <p className="text-gray-500 mt-1">Gérez vos accès et informations administratives.</p>
-        </div>
-      </div>
 
       <form onSubmit={handleSave} className="max-w-4xl space-y-8">
         

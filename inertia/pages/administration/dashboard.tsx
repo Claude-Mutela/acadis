@@ -12,15 +12,12 @@ const stats = [
 
 export default function Dashboard() {
   return (
-    <AdminLayout title="Dashboard Administration">
+    <AdminLayout title="Dashboard" description="Gérez l'académie depuis cet espace centralisé.">
       <Head title="Dashboard — Admin ACADIS" />
       
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Vue d'ensemble</h1>
-          <p className="text-gray-500 mt-1">Gérez l'académie depuis cet espace centralisé.</p>
-        </div>
-        <button className="bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h2 className="text-xl sm:text-2xl font-black text-gray-900">Vue d'ensemble</h2>
+        <button className="bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-6 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5">
           Télécharger le rapport
         </button>
       </div>
