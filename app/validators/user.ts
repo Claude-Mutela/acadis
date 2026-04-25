@@ -17,8 +17,8 @@ export const signupValidator = vine.compile(
     password: password().confirmed({
       confirmationField: 'passwordConfirmation',
     }),
-    role: vine.enum(['superadmin', 'admin', 'student', 'trainer']),
-    status: vine.enum(['active', 'inactive', 'suspended']),
+    role: vine.enum(['superadmin', 'admin', 'financial', 'student', 'trainer', 'supervisor']),
+    status: vine.enum(['active', 'inactive', 'suspended', 'pending']),
   })
 )
 
@@ -31,7 +31,7 @@ export const createUserValidator = vine.compile(
     lastName: vine.string().trim().minLength(2).maxLength(100),
     email: email().unique({ table: 'users', column: 'email' }),
     password: password(),
-    role: vine.enum(['superadmin', 'admin', 'student', 'trainer']),
-    status: vine.enum(['active', 'inactive', 'suspended']),
+    role: vine.enum(['superadmin', 'admin', 'financial', 'student', 'trainer', 'supervisor']),
+    status: vine.enum(['active', 'inactive', 'suspended', 'pending']),
   })
 )

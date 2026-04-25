@@ -107,6 +107,16 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'type.enum': "Le type sélectionné est invalide.",
   'capacity.required': "La capacité (places totales) est obligatoire.",
   'capacity.number': "La capacité doit être un nombre valide.",
-  'capacity.min': "La capacité ne peut pas être négative."
+  'capacity.min': "La capacité ne peut pas être négative.",
+
+  // Profil Étudiant
+  'gender.required': "Le sexe est obligatoire.",
+  'homeChurch.required': "L'église d'attache est obligatoire.",
+  'worker.required': "Le statut d'ouvrier est obligatoire.",
+  'format.required': "Le format (en ligne/présentiel) est obligatoire.",
+  'physiqueAddress.required': "L'adresse physique est obligatoire.",
+  'phoneNumber.required': "Le numéro de téléphone est obligatoire.",
+  'dateofbirth.required': "La date de naissance est obligatoire.",
+  'dateofbirth.date': "La date de naissance doit être une date valide."
 })
 
