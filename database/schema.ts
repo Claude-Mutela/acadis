@@ -107,6 +107,29 @@ export class DepartmentSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class EnrollmentSchema extends BaseModel {
+  static $columns = ['createdAt', 'enrolledAt', 'enrolledBy', 'id', 'notes', 'planningId', 'status', 'updatedAt', 'userId'] as const
+  $columns = EnrollmentSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column.dateTime()
+  declare enrolledAt: DateTime
+  @column()
+  declare enrolledBy: number | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare notes: string | null
+  @column()
+  declare planningId: number
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
 export class ImageSchema extends BaseModel {
   static $columns = ['albumId', 'createdAt', 'date', 'filePath', 'id', 'location', 'title', 'updatedAt'] as const
   $columns = ImageSchema.$columns
@@ -169,7 +192,7 @@ export class LessonSchema extends BaseModel {
 }
 
 export class LessonProgressSchema extends BaseModel {
-  static $columns = ['completedAt', 'createdAt', 'id', 'isCompleted', 'lessonId', 'studentId', 'updatedAt'] as const
+  static $columns = ['completedAt', 'createdAt', 'id', 'isCompleted', 'lessonId', 'updatedAt', 'userId'] as const
   $columns = LessonProgressSchema.$columns
   @column.dateTime()
   declare completedAt: DateTime | null
@@ -181,14 +204,14 @@ export class LessonProgressSchema extends BaseModel {
   declare isCompleted: boolean
   @column()
   declare lessonId: number
-  @column()
-  declare studentId: number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
 }
 
 export class ManualPurchaseSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'manuelId', 'paymentId', 'studentId', 'updatedAt'] as const
+  static $columns = ['createdAt', 'id', 'manuelId', 'paymentId', 'updatedAt', 'userId'] as const
   $columns = ManualPurchaseSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -198,10 +221,10 @@ export class ManualPurchaseSchema extends BaseModel {
   declare manuelId: number
   @column()
   declare paymentId: number
-  @column()
-  declare studentId: number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
 }
 
 export class ManuelSchema extends BaseModel {
@@ -251,7 +274,7 @@ export class ModuleSchema extends BaseModel {
 }
 
 export class PaymentSchema extends BaseModel {
-  static $columns = ['amount', 'createdAt', 'id', 'paidAt', 'paymentType', 'programId', 'reference', 'status', 'studentId', 'updatedAt'] as const
+  static $columns = ['amount', 'createdAt', 'id', 'paidAt', 'paymentType', 'programId', 'reference', 'status', 'updatedAt', 'userId'] as const
   $columns = PaymentSchema.$columns
   @column()
   declare amount: string
@@ -269,10 +292,10 @@ export class PaymentSchema extends BaseModel {
   declare reference: string
   @column()
   declare status: string
-  @column()
-  declare studentId: number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
 }
 
 export class PlanningSchema extends BaseModel {
@@ -380,34 +403,13 @@ export class ScheduleSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
-export class StudentSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'id', 'password', 'role', 'status', 'updatedAt'] as const
-  $columns = StudentSchema.$columns
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime | null
-  @column()
-  declare email: string
-  @column({ isPrimary: true })
-  declare id: number
-  @column({ serializeAs: null })
-  declare password: string
-  @column()
-  declare role: string
-  @column()
-  declare status: string
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime | null
-}
-
 export class StudentProfileSchema extends BaseModel {
-  static $columns = ['avatar', 'createdAt', 'firstName', 'format', 'gender', 'homeChurch', 'id', 'lastName', 'ministry', 'phone', 'studentId', 'updatedAt', 'worker'] as const
+  static $columns = ['createdAt', 'dateofbirth', 'format', 'gender', 'homeChurch', 'id', 'ministry', 'phoneNumber', 'physiqueAddress', 'studentProfileImage', 'updatedAt', 'userId', 'worker'] as const
   $columns = StudentProfileSchema.$columns
-  @column()
-  declare avatar: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
-  @column()
-  declare firstName: string
+  @column.date()
+  declare dateofbirth: DateTime | null
   @column()
   declare format: string
   @column()
@@ -417,21 +419,23 @@ export class StudentProfileSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
-  declare lastName: string
+  declare ministry: string | null
   @column()
-  declare ministry: string
+  declare phoneNumber: string | null
   @column()
-  declare phone: string | null
+  declare physiqueAddress: string | null
   @column()
-  declare studentId: number
+  declare studentProfileImage: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
-  declare worker: boolean
+  declare userId: number
+  @column()
+  declare worker: string
 }
 
 export class TestimonySchema extends BaseModel {
-  static $columns = ['content', 'createdAt', 'id', 'studentId', 'updatedAt', 'userId'] as const
+  static $columns = ['content', 'createdAt', 'id', 'updatedAt', 'userId'] as const
   $columns = TestimonySchema.$columns
   @column()
   declare content: string
@@ -439,8 +443,6 @@ export class TestimonySchema extends BaseModel {
   declare createdAt: DateTime | null
   @column({ isPrimary: true })
   declare id: number
-  @column()
-  declare studentId: number | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
