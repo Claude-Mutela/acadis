@@ -5,66 +5,100 @@ import {
   Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, User, Mail, BookOpen, Clock, Phone, Home, Globe
 } from 'lucide-react'
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-const initialStudents = [
-  { 
-    id: 1, prenom: 'Jean', nom: 'Dupont', email: 'jean.dupont@email.com', telephone: '+243999975628', 
-    eglise: 'Église ACADIS', estOuvrier: true, departement: 'Multimédia', 
-    session: 'Présentiel', vacation: 'Soir',
-    programme: 'Parcours Fondamental', statut: 'Actif', date: '12 Mar 2026' 
-  },
-  { 
-    id: 2, prenom: 'Alice', nom: 'Mvuba', email: 'alice.m@email.com', telephone: '+243900000000', 
-    eglise: 'Philadelphie', estOuvrier: false, departement: '', 
-    session: 'En ligne', vacation: 'Matin',
-    programme: 'École des Ouvriers', statut: 'Actif', date: '10 Mar 2026' 
-  },
-  { 
-    id: 3, prenom: 'Fabrice', nom: 'Nkongolo', email: 'fab.nk@email.com', telephone: '+243810000000', 
-    eglise: 'Église ACADIS', estOuvrier: true, departement: 'Sécurité', 
-    session: 'Présentiel', vacation: 'Week-end',
-    programme: 'Leadership Biblique', statut: 'En attente', date: '08 Mar 2026' 
-  },
-  { 
-    id: 4, prenom: 'Sarah', nom: 'Kasongo', email: 'sarah.k@email.com', telephone: '+243890000000', 
-    eglise: 'CENAC', estOuvrier: false, departement: '', 
-    session: 'Présentiel', vacation: 'Midi',
-    programme: 'Parcours Fondamental', statut: 'Inactif', date: '01 Mar 2026' 
-  },
-]
+interface StudentProp {
+  id: number
+  nom: string
+  prenom: string
+  email: string
+  telephone: string
+  eglise: string
+  ministere: string
+  programme: string
+  session: string
+  type: string
+  statut: string
+  cohort: string
+  estOuvrier: boolean
+  departement: string
+  vacation: string
+}
 
-const programmesList = [
-  'Tous', 
-  'Parcours Fondamental', 
-  'Face à moi-même', 
-  'École des Ouvriers', 
-  'Leadership Biblique', 
-  'École des Dons', 
-  'L\'Art de la Prière', 
-  'Gouvernance de l\'Église', 
-  'Doulos'
-]
-
-// ── Types ──────────────────────────────────────────────────────────────────────
-type Etudiant = typeof initialStudents[0]
+interface PageProps {
+  students: any[]
+  filters: {
+    cohorts: any[]
+    allPrograms: any[]
+  }
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function EtudiantsIndex() {
-  const [students, setStudents] = useState<Etudiant[]>(initialStudents)
-  
+export default function EtudiantsIndex({ students: rawStudents, filters }: PageProps) {
+  // ── Formatage des données (Logicielle de présentation) ──────────────────────
+  const students = useMemo((): StudentProp[] => {
+    return rawStudents.map((student: any) => {
+      const profile = student.studentProfile
+      const latestEnrollment = student.enrollments?.[0]
+      const planning = latestEnrollment?.planning
+      const cohort = planning?.cohorts?.[0]
+      const program = latestEnrollment?.program
+      const vacation = latestEnrollment?.vacation
+
+      return {
+        id: student.id,
+        nom: student.lastName,
+        prenom: student.firstName,
+        email: student.email,
+        telephone: profile?.phoneNumber || '-',
+        eglise: profile?.homeChurch || '-',
+        ministere: profile?.ministry || '-',
+        programme: program?.name || 'Non inscrit',
+        session: vacation ? `${vacation.day} (${vacation.startTime} - ${vacation.endTime})` : '-',
+        type: planning?.type || '-',
+        statut: latestEnrollment?.status || 'Aucun',
+        cohort: cohort?.name || '-',
+        estOuvrier: profile?.worker === 'Oui',
+        departement: profile?.ministry || '-',
+        vacation: vacation?.day || '-',
+      }
+    })
+  }, [rawStudents])
+
+  const formattedCohorts = useMemo(() => {
+    return filters.cohorts.map((c) => ({
+      id: c.id,
+      name: c.name,
+      programNames: Array.from(new Set(c.programs?.map((p: any) => p.name) || []))
+    }))
+  }, [filters.cohorts])
+
   // États de recherche et filtre
   const [search, setSearch] = useState('')
+  const [filterCohort, setFilterCohort] = useState('Tous')
   const [filterProgramme, setFilterProgramme] = useState('Tous')
   
   // États de pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 7
+  const itemsPerPage = 10
 
   // États pour les Modales
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
-  const [currentStudent, setCurrentStudent] = useState<Etudiant | null>(null)
+  const [currentStudent, setCurrentStudent] = useState<StudentProp | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
+  // ── Logique des Filtres Dynamiques ──────────────────────────────────────────
+  const availablePrograms = useMemo(() => {
+    const cohort = formattedCohorts.find(c => c.name === filterCohort)
+    const programs = cohort ? cohort.programNames : filters.allPrograms.map(p => p.name)
+    return Array.from(new Set(programs))
+  }, [filterCohort, formattedCohorts, filters.allPrograms])
+
+  // Reset programme filter if not available in new cohort
+  useMemo(() => {
+    if (filterProgramme !== 'Tous' && !availablePrograms.includes(filterProgramme)) {
+      setFilterProgramme('Tous')
+    }
+  }, [availablePrograms])
   
   // ── Logique Métier (Filtrage & Pagination) ──────────────────────────────────
   const filteredStudents = useMemo(() => {
@@ -74,11 +108,12 @@ export default function EtudiantsIndex() {
         student.prenom.toLowerCase().includes(search.toLowerCase()) || 
         student.email.toLowerCase().includes(search.toLowerCase())
       
-      const matchFilter = filterProgramme === 'Tous' || student.programme === filterProgramme
+      const matchCohort = filterCohort === 'Tous' || student.cohort === filterCohort
+      const matchProgramme = filterProgramme === 'Tous' || student.programme === filterProgramme
       
-      return matchSearch && matchFilter
+      return matchSearch && matchCohort && matchProgramme
     })
-  }, [students, search, filterProgramme])
+  }, [students, search, filterCohort, filterProgramme])
 
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage)
   
@@ -99,63 +134,29 @@ export default function EtudiantsIndex() {
   }
 
   // ── Actions CRUD ─────────────────────────────────────────────────────────────
+  // Actions CRUD (Placeholders pour l'instant)
   const openCreateModal = () => {
-    setModalMode('create')
-    setCurrentStudent({ 
-      id: 0, 
-      prenom: '', 
-      nom: '', 
-      email: '', 
-      telephone: '',
-      eglise: '',
-      estOuvrier: false,
-      departement: '',
-      session: 'Présentiel',
-      vacation: 'Soir',
-      programme: 'Parcours Fondamental', 
-      statut: 'En attente', 
-      date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) 
-    })
+    // setIsModalOpen(true)
+    alert("La création manuelle d'étudiants sera implémentée avec la logique métier.")
+  }
+
+  const openEditModal = (student: StudentProp) => {
+    setCurrentStudent(student)
     setIsModalOpen(true)
   }
 
-  const openEditModal = (student: Etudiant) => {
-    setModalMode('edit')
-    setCurrentStudent({ ...student })
-    setIsModalOpen(true)
-  }
-
-  const handleDeletePrompt = (student: Etudiant) => {
+  const handleDeletePrompt = (student: StudentProp) => {
     setCurrentStudent(student)
     setIsDeleteModalOpen(true)
   }
 
   const handleSaveStudent = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!currentStudent) return
-
-    // Nettoyage si non ouvrier
-    const studentToSave = {
-      ...currentStudent,
-      departement: currentStudent.estOuvrier ? currentStudent.departement : ''
-    }
-
-    if (modalMode === 'create') {
-      const newId = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1
-      setStudents([{ ...studentToSave, id: newId }, ...students])
-    } else {
-      setStudents(students.map(s => s.id === studentToSave.id ? studentToSave : s))
-    }
-    
     setIsModalOpen(false)
   }
 
   const confirmDelete = () => {
-    if (currentStudent) {
-      setStudents(students.filter(s => s.id !== currentStudent.id))
-      setIsDeleteModalOpen(false)
-      setCurrentStudent(null)
-    }
+    setIsDeleteModalOpen(false)
   }
 
   // ── Rendu de l'UI ────────────────────────────────────────────────────────────
@@ -163,7 +164,7 @@ export default function EtudiantsIndex() {
     <AdminLayout title="Étudiants" description="Gérez les inscriptions et les profils des disciples.">
       <Head title="Étudiants — Admin ACADIS" />
       
-      {/* 1. Actions Rapides (Recherche, Filtre, Ajout) */}
+      {/* 1. Actions Rapides (Recherche, Filtres, Ajout) */}
       <div className="flex flex-col md:flex-row items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex-1 relative w-full md:max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -178,17 +179,30 @@ export default function EtudiantsIndex() {
           />
         </div>
         
-        <div className="w-full md:w-48 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Filter className="h-4 w-4 text-gray-400" />
-          </div>
+        <div className="w-full md:w-44 relative">
+          <Filter className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <select
+            value={filterCohort}
+            onChange={(e) => { setFilterCohort(e.target.value); setCurrentPage(1); }}
+            className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
+          >
+            <option value="Tous">Toutes les cohortes</option>
+            {formattedCohorts.map(c => (
+              <option key={c.id} value={c.name}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="w-full md:w-44 relative">
+          <Filter className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <select
             value={filterProgramme}
             onChange={handleFilter}
             className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
           >
-            {programmesList.map(prog => (
-              <option key={prog} value={prog}>{prog === 'Tous' ? 'Tous les programmes' : prog}</option>
+            <option value="Tous">Tous les programmes</option>
+            {availablePrograms.map(progName => (
+              <option key={progName} value={progName}>{progName}</option>
             ))}
           </select>
         </div>
@@ -222,27 +236,27 @@ export default function EtudiantsIndex() {
                   <tr key={student.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-orange/10 text-orange flex items-center justify-center font-bold text-sm flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-orange/10 text-orange flex items-center justify-center font-bold text-sm flex-shrink-0 uppercase">
                           {student.prenom[0]}{student.nom[0]}
                         </div>
                         <div>
-                          <div className="font-bold text-gray-900">{student.prenom} {student.nom}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">{student.eglise} {student.estOuvrier ? '(Ouvrier)' : ''}</div>
+                          <div className="font-bold text-gray-900 uppercase">{student.nom} <span className="capitalize">{student.prenom}</span></div>
+                          <div className="text-xs text-gray-400 mt-0.5">{student.eglise} — {student.ministere}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600 font-medium">{student.telephone}</div>
-                      <div className="text-xs text-gray-400">{student.email}</div>
+                      <div className="text-sm text-gray-600 font-medium flex items-center gap-1.5"><Phone className="w-3 h-3 text-gray-400" /> {student.telephone}</div>
+                      <div className="text-xs text-gray-400 flex items-center gap-1.5"><Mail className="w-3 h-3 text-gray-400" /> {student.email}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex w-fit items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-600">
-                          {student.session === 'Présentiel' ? <User className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                        <span className="text-xs font-bold text-gray-700">
                           {student.session}
                         </span>
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {student.vacation}
+                        <span className="inline-flex w-fit items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-gray-100 text-gray-500">
+                          {student.type === 'en ligne' ? <Globe className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
+                          {student.type}
                         </span>
                       </div>
                     </td>
@@ -251,20 +265,21 @@ export default function EtudiantsIndex() {
                         <div className="px-2.5 py-1 rounded-md bg-orange/10 text-orange text-xs font-bold border border-orange/20 whitespace-nowrap">
                           {student.programme}
                         </div>
+                        <div className="text-[10px] text-gray-400 font-bold uppercase ml-1">{student.cohort}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                        student.statut === 'Actif' ? 'bg-green-100 text-green-700' :
-                        student.statut === 'En attente' ? 'bg-orange/20 text-orange' :
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
+                        student.statut === 'confirmed' ? 'bg-green-100 text-green-700' :
+                        student.statut === 'pending' ? 'bg-orange/20 text-orange' :
                         'bg-red-100 text-red-700'
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${
-                          student.statut === 'Actif' ? 'bg-green-500' :
-                          student.statut === 'En attente' ? 'bg-orange' :
+                          student.statut === 'confirmed' ? 'bg-green-500' :
+                          student.statut === 'pending' ? 'bg-orange' :
                           'bg-red-500'
                         }`} />
-                        {student.statut}
+                        {student.statut === 'confirmed' ? 'Confirmé' : student.statut === 'pending' ? 'En attente' : student.statut}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -474,8 +489,8 @@ export default function EtudiantsIndex() {
                           onChange={e => setCurrentStudent({...currentStudent, programme: e.target.value})}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
                         >
-                          {programmesList.filter(p => p !== 'Tous').map(prog => (
-                            <option key={prog} value={prog}>{prog}</option>
+                          {filters.allPrograms.map(p => (
+                            <option key={p.id} value={p.name}>{p.name}</option>
                           ))}
                         </select>
                       </div>
@@ -488,7 +503,7 @@ export default function EtudiantsIndex() {
                             <input 
                               type="radio" name="session" value={opt} 
                               checked={currentStudent.session === opt}
-                              onChange={e => setCurrentStudent({...currentStudent, session: e.target.value as Etudiant['session']})}
+                              onChange={e => setCurrentStudent({...currentStudent, session: e.target.value})}
                               className="sr-only peer"
                             />
                             <div className="text-center py-2 text-sm font-medium text-gray-500 rounded-lg cursor-pointer peer-checked:bg-white peer-checked:text-black peer-checked:shadow-sm peer-checked:font-bold transition-all">
