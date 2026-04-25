@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Head, useForm, usePage, router } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
-import { 
+import {
   Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, User, Mail, Shield, Phone, Eye, EyeOff
 } from 'lucide-react'
 
@@ -23,11 +23,11 @@ export type UserData = {
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function UsersIndex() {
   const { users } = usePage<{ users: UserData[] }>().props
-  
+
   // États de recherche et filtre
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState('Tous')
-  
+
   // États de pagination
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 7
@@ -38,24 +38,24 @@ export default function UsersIndex() {
   const [currentUser, setCurrentUser] = useState<UserData & { password?: string } | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  
+
   // ── Logique Métier (Filtrage & Pagination) ──────────────────────────────────
   const filteredUsers = useMemo(() => {
     const list = users || []
     return list.filter(user => {
-      const matchSearch = 
-        user.lastName.toLowerCase().includes(search.toLowerCase()) || 
-        user.firstName.toLowerCase().includes(search.toLowerCase()) || 
+      const matchSearch =
+        user.lastName.toLowerCase().includes(search.toLowerCase()) ||
+        user.firstName.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase())
-      
+
       const matchRole = filterRole === 'Tous' || user.role === filterRole
-      
+
       return matchSearch && matchRole
     })
   }, [users, search, filterRole])
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
-  
+
   const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     return filteredUsers.slice(startIndex, startIndex + itemsPerPage)
@@ -75,8 +75,8 @@ export default function UsersIndex() {
   // ── Actions CRUD ─────────────────────────────────────────────────────────────
   const openCreateModal = () => {
     setModalMode('create')
-    setCurrentUser({ 
-      id: 0, firstName: '', lastName: '', email: '', 
+    setCurrentUser({
+      id: 0, firstName: '', lastName: '', email: '',
       role: 'student', status: 'active', createdAt: new Date().toISOString()
     } as UserData)
     setData({ firstName: '', lastName: '', email: '', password: '', role: 'student', status: 'active' })
@@ -102,8 +102,8 @@ export default function UsersIndex() {
     lastName: '',
     email: '',
     password: '',
-    role: 'student' as 'superadmin' | 'admin' | 'student' | 'trainer',
-    status: 'active' as 'active' | 'inactive' | 'suspended',
+    role: 'student' as 'superadmin' | 'admin' | 'student' | 'trainer' | 'supervisor' | 'financial',
+    status: 'active' as 'active' | 'inactive' | 'suspended' | 'pending',
   })
 
   const handleSaveUser = (e: React.FormEvent) => {
@@ -133,7 +133,7 @@ export default function UsersIndex() {
   }
 
   const getRoleBadgeColor = (role: string) => {
-    switch(role) {
+    switch (role) {
       case 'superadmin': return 'bg-purple-100 text-purple-700 border-purple-200'
       case 'admin': return 'bg-blue-100 text-blue-700 border-blue-200'
       case 'trainer': return 'bg-indigo-100 text-indigo-700 border-indigo-200'
@@ -142,7 +142,7 @@ export default function UsersIndex() {
   }
 
   const getStatusBadgeColor = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'active': return 'bg-green-100 text-green-700'
       case 'inactive': return 'bg-gray-100 text-gray-700'
       case 'suspended': return 'bg-red-100 text-red-700'
@@ -154,14 +154,14 @@ export default function UsersIndex() {
   return (
     <AdminLayout title="Gestion des Utilisateurs">
       <Head title="Utilisateurs — Admin ACADIS" />
-      
+
       {/* 1. Header de Page */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Utilisateurs</h1>
           <p className="text-gray-500 mt-1">Gérez les accès et les profils des membres de la plateforme.</p>
         </div>
-        <button 
+        <button
           onClick={openCreateModal}
           className="flex items-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5"
         >
@@ -184,7 +184,7 @@ export default function UsersIndex() {
             className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm transition-colors"
           />
         </div>
-        
+
         <div className="sm:w-64 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Filter className="h-4 w-4 text-gray-400" />
@@ -241,24 +241,23 @@ export default function UsersIndex() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(user.status)}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          user.status === 'active' ? 'bg-green-500' :
+                        <span className={`w-1.5 h-1.5 rounded-full ${user.status === 'active' ? 'bg-green-500' :
                           user.status === 'inactive' ? 'bg-gray-400' :
-                          'bg-red-500'
-                        }`} />
+                            'bg-red-500'
+                          }`} />
                         {user.status === 'active' ? 'Actif' : user.status === 'inactive' ? 'Inactif' : 'Suspendu'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
+                        <button
                           onClick={() => openEditModal(user)}
                           className="p-1.5 bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 rounded-lg transition-colors"
                           title="Modifier"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeletePrompt(user)}
                           className="p-1.5 bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors"
                           title="Supprimer"
@@ -287,31 +286,30 @@ export default function UsersIndex() {
               Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, filteredUsers.length)} sur {filteredUsers.length} utilisateurs
             </span>
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => p - 1)}
                 className="p-1.5 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               <div className="flex items-center gap-1 font-medium text-sm">
                 {[...Array(totalPages)].map((_, i) => (
-                  <button 
+                  <button
                     key={i}
                     onClick={() => setCurrentPage(i + 1)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                      currentPage === i + 1 
-                        ? 'bg-black text-white' 
-                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${currentPage === i + 1
+                      ? 'bg-black text-white'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
                   >
                     {i + 1}
                   </button>
                 ))}
               </div>
 
-              <button 
+              <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(p => p + 1)}
                 className="p-1.5 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -328,7 +326,7 @@ export default function UsersIndex() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
           <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
-            
+
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 flex-shrink-0">
               <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
                 {modalMode === 'create' ? <Plus className="w-5 h-5 text-orange" /> : <Edit2 className="w-5 h-5 text-orange" />}
@@ -341,7 +339,7 @@ export default function UsersIndex() {
 
             <div className="overflow-y-auto flex-1 p-6">
               <form id="userUpdateForm" onSubmit={handleSaveUser} method="POST" className="space-y-6">
-                
+
                 {/* Informations de base */}
                 <div>
                   <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Informations Personnelles</h4>
@@ -350,9 +348,9 @@ export default function UsersIndex() {
                       <label className="block text-sm font-bold text-gray-700 mb-1.5">Prénom</label>
                       <div className="relative">
                         <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
+                        <input
                           type="text" required
-                          value={data.firstName} 
+                          value={data.firstName}
                           onChange={e => setData('firstName', e.target.value)}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
                         />
@@ -363,9 +361,9 @@ export default function UsersIndex() {
                       <label className="block text-sm font-bold text-gray-700 mb-1.5">Nom</label>
                       <div className="relative">
                         <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
+                        <input
                           type="text" required
-                          value={data.lastName} 
+                          value={data.lastName}
                           onChange={e => setData('lastName', e.target.value)}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
                         />
@@ -376,9 +374,9 @@ export default function UsersIndex() {
                       <label className="block text-sm font-bold text-gray-700 mb-1.5">Email</label>
                       <div className="relative">
                         <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
+                        <input
                           type="email" required
-                          value={data.email} 
+                          value={data.email}
                           onChange={e => setData('email', e.target.value)}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
                         />
@@ -396,12 +394,14 @@ export default function UsersIndex() {
                       <label className="block text-sm font-bold text-gray-700 mb-1.5">Rôle Système</label>
                       <div className="relative">
                         <Shield className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <select 
-                          value={data.role} 
+                        <select
+                          value={data.role}
                           onChange={e => setData('role', e.target.value as any)}
                           className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
                         >
                           <option value="student">Étudiant (Student)</option>
+                          <option value="financial">Financier (Financial)</option>
+                          <option value="supervisor">Superviseur (Supervisor)</option>
                           <option value="trainer">Formateur (Trainer)</option>
                           <option value="admin">Administrateur (Admin)</option>
                           <option value="superadmin">Super Administrateur</option>
@@ -411,14 +411,15 @@ export default function UsersIndex() {
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-1.5">Statut du Compte</label>
-                      <select 
-                        value={data.status} 
+                      <select
+                        value={data.status}
                         onChange={e => setData('status', e.target.value as any)}
                         className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none appearance-none cursor-pointer"
                       >
-                         <option value="active">Actif</option>
-                         <option value="inactive">Inactif</option>
-                         <option value="suspended">Suspendu</option>
+                        <option value="active">Actif</option>
+                        <option value="inactive">Inactif</option>
+                        <option value="suspended">Suspendu</option>
+                        <option value="pending">En Attente</option>
                       </select>
                       {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
                     </div>
@@ -434,14 +435,14 @@ export default function UsersIndex() {
                         {modalMode === 'create' ? 'Mot de passe initial' : 'Nouveau mot de passe (laisser vide pour ne pas changer)'}
                       </label>
                       <div className="relative">
-                        <input 
+                        <input
                           type={showPassword ? "text" : "password"}
                           placeholder={modalMode === 'create' ? "••••••••" : "Ne pas modifier"}
                           value={data.password}
                           onChange={e => setData('password', e.target.value)}
                           className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none"
                         />
-                        <button 
+                        <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
