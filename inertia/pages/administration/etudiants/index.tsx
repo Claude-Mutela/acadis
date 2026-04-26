@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Head } from '@inertiajs/react'
+import { Head, router, usePage } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
 import { 
   Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, User, Mail, BookOpen, Clock, Phone, Home, Globe
@@ -34,6 +34,8 @@ interface PageProps {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function EtudiantsIndex({ students: rawStudents, filters }: PageProps) {
+  const { errors } = usePage<{ errors: Record<string, string> }>().props
+
   // ── Formatage des données (Logicielle de présentation) ──────────────────────
   const students = useMemo((): StudentProp[] => {
     return rawStudents.map((student: any) => {
@@ -120,7 +122,22 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
     return program?.vacations || []
   }, [formData.programId, filters.allPrograms])
 
-  // Reset dependent fields when parent changes
+  // Résolution du planningId depuis la cohorte (premier planning actif)
+  const resolvedPlanningId = useMemo(() => {
+    if (!formData.cohortId) return ''
+    const cohort = filters.cohorts.find((c: any) => c.id.toString() === formData.cohortId.toString())
+    // On prend le premier planning de la cohorte s'il existe
+    const planning = cohort?.plannings?.[0]
+    return planning ? planning.id.toString() : ''
+  }, [formData.cohortId, filters.cohorts])
+
+  // Synchroniser planningId dans formData quand la cohorte change
+  useEffect(() => {
+    if (resolvedPlanningId) {
+      setFormData(prev => ({ ...prev, planningId: resolvedPlanningId }))
+    }
+  }, [resolvedPlanningId])
+
   useEffect(() => {
     setFormData(prev => ({ ...prev, programId: '', vacationId: '' }))
   }, [formData.cohortId])
@@ -203,24 +220,30 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
   const openEditModal = (student: StudentProp) => {
     setModalMode('edit')
     setCurrentStudent(student)
-    setFormData({
+    // On remplit formData avec ce qu'on a dans StudentProp
+    // cohortId et planningId seront enrichis lors d'une prochaine itération
+    setFormData(prev => ({
+      ...prev,
       firstName: student.prenom,
       lastName: student.nom,
       email: student.email,
-      password: '', // On ne touche pas au password en édition ici
-      gender: 'M', // Info non présente dans StudentProp actuellement, à améliorer plus tard
+      password: '',
+      gender: 'M',
       homeChurch: student.eglise,
       worker: student.estOuvrier,
-      ministry: student.departement,
-      address: '', 
-      phoneNumber: student.telephone,
-      dateOfBirth: '', 
-      cohortId: '', // Nécessiterait l'ID réel
-      programId: '', 
-      planningId: '', 
-      vacationId: student.vacation.toLowerCase(),
-      status: student.statut === 'Confirmé' ? 'confirmed' : 'pending'
-    })
+      ministry: student.departement !== '-' ? student.departement : '',
+      address: '',
+      phoneNumber: student.telephone !== '-' ? student.telephone : '',
+      dateOfBirth: '',
+      cohortId: '',
+      programId: '',
+      planningId: '',
+      vacationId: '',
+      status: student.statut === 'confirmed' ? 'confirmed'
+             : student.statut === 'rejected'  ? 'rejected'
+             : student.statut === 'cancelled' ? 'cancelled'
+             : 'pending'
+    }))
     setIsModalOpen(true)
   }
 
@@ -231,11 +254,45 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
 
   const handleSaveStudent = (e: React.FormEvent) => {
     e.preventDefault()
-    setIsModalOpen(false)
+
+    const payload = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      ...(modalMode === 'create' ? { password: formData.password } : {}),
+      gender: formData.gender,
+      homeChurch: formData.homeChurch,
+      worker: formData.worker,
+      ministry: formData.ministry || null,
+      physiqueAddress: formData.address || null,
+      phoneNumber: formData.phoneNumber || null,
+      dateofbirth: formData.dateOfBirth || null,
+      planningId: Number(formData.planningId) || undefined,
+      programId: Number(formData.programId) || undefined,
+      vacationId: formData.vacationId ? Number(formData.vacationId) : null,
+      status: formData.status,
+    }
+
+    if (modalMode === 'create') {
+      router.post('/administration/etudiants', payload, {
+        preserveScroll: true,
+        onSuccess: () => setIsModalOpen(false),
+      })
+    } else if (currentStudent) {
+      router.put(`/administration/etudiants/${currentStudent.id}`, payload, {
+        preserveScroll: true,
+        onSuccess: () => setIsModalOpen(false),
+      })
+    }
   }
 
   const confirmDelete = () => {
-    setIsDeleteModalOpen(false)
+    console.log('Confirm Delete called for:', currentStudent)
+    if (!currentStudent) return
+    router.delete(`/administration/etudiants/${currentStudent.id}`, {
+      preserveScroll: true,
+      onSuccess: () => setIsDeleteModalOpen(false),
+    })
   }
 
   // ── Rendu de l'UI ────────────────────────────────────────────────────────────
@@ -303,7 +360,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
               <tr className="bg-gray-50/50 border-b border-gray-100 uppercase text-xs font-black text-gray-400 tracking-wider">
                 <th className="px-6 py-4">Étudiant</th>
                 <th className="px-6 py-4">Contact</th>
-                <th className="px-6 py-4">Option (Session/Vacation)</th>
+                <th className="px-6 py-4">Session/Vacation</th>
                 <th className="px-6 py-4">Programme</th>
                 <th className="px-6 py-4">Statut</th>
                 <th className="px-6 py-4 text-right">Actions</th>
@@ -468,8 +525,9 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                         placeholder="Ex: Jean"
                         value={formData.firstName} 
                         onChange={e => setFormData({...formData, firstName: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all ${errors.firstName ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                       />
+                      {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Nom</label>
@@ -478,8 +536,9 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                         placeholder="Ex: Dupont"
                         value={formData.lastName} 
                         onChange={e => setFormData({...formData, lastName: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all ${errors.lastName ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                       />
+                      {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Email</label>
@@ -488,8 +547,9 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                         placeholder="jean.dupont@exemple.com"
                         value={formData.email} 
                         onChange={e => setFormData({...formData, email: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                       />
+                      {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                     </div>
                     {modalMode === 'create' && (
                       <div>
@@ -499,8 +559,9 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                           placeholder="••••••••"
                           value={formData.password} 
                           onChange={e => setFormData({...formData, password: e.target.value})}
-                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                          className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all ${errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                         />
+                        {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
                       </div>
                     )}
                   </div>
@@ -531,17 +592,19 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                         placeholder="+243..."
                         value={formData.phoneNumber} 
                         onChange={e => setFormData({...formData, phoneNumber: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all ${errors.phoneNumber ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                       />
+                      {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Date de naissance</label>
                       <input 
-                        type="date" required
+                        type="date"
                         value={formData.dateOfBirth} 
                         onChange={e => setFormData({...formData, dateOfBirth: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all ${errors.dateofbirth ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                       />
+                      {errors.dateofbirth && <p className="text-red-500 text-xs mt-1">{errors.dateofbirth}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Église d'attache</label>
@@ -550,8 +613,9 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                         placeholder="Nom de l'église"
                         value={formData.homeChurch} 
                         onChange={e => setFormData({...formData, homeChurch: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all ${errors.homeChurch ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                       />
+                      {errors.homeChurch && <p className="text-red-500 text-xs mt-1">{errors.homeChurch}</p>}
                     </div>
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Adresse Physique</label>
@@ -608,13 +672,14 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                         required
                         value={formData.cohortId}
                         onChange={e => setFormData({...formData, cohortId: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer"
+                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer ${errors.planningId ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                       >
                         <option value="">Sélectionner une cohorte</option>
                         {formattedCohorts.map(c => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
+                      {errors.planningId && <p className="text-red-500 text-xs mt-1">{errors.planningId}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Programme</label>
@@ -623,13 +688,14 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                         disabled={!formData.cohortId}
                         value={formData.programId}
                         onChange={e => setFormData({...formData, programId: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-opacity ${errors.programId ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                       >
                         <option value="">Choisir un programme</option>
                         {modalPrograms.map((p: any) => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                       </select>
+                      {errors.programId && <p className="text-red-500 text-xs mt-1">{errors.programId}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Vacation</label>

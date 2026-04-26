@@ -89,10 +89,18 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'role.enum': "Le rôle sélectionné est invalide.",
   'status.required': "Le statut est obligatoire.",
   'status.enum': "Le statut sélectionné est invalide.",
-  'gender.required': "Le sexe est obligatoire.",
-  'gender.enum': "Le sexe doit être Homme ou Femme.",
+  'gender.required': "Le genre est obligatoire.",
+  'gender.in': "Le genre doit être M (Masculin) ou F (Féminin).",
   'homeChurch.required': "L'église d'attache est obligatoire.",
+  'homeChurch.minLength': "Le nom de l'église doit contenir au moins {{ min }} caractères.",
   'specialization.required': "La spécialisation est obligatoire.",
+  'worker.required': "Le statut d'ouvrier est obligatoire.",
+  'ministry.maxLength': "Le nom du ministère ne peut pas dépasser {{ max }} caractères.",
+  'phoneNumber.required': "Le numéro de téléphone est obligatoire.",
+  'phoneNumber.minLength': "Le numéro de téléphone doit contenir au moins {{ min }} chiffres.",
+  'phoneNumber.maxLength': "Le numéro de téléphone ne peut pas dépasser {{ max }} caractères.",
+  'dateofbirth.date': "La date de naissance doit être une date valide.",
+  'dateofbirth.format': "La date de naissance doit respecter le format AAAA-MM-JJ.",
 
   // Cohortes
   'slug.required': "Le slug est obligatoire.",
@@ -109,14 +117,12 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'capacity.number': "La capacité doit être un nombre valide.",
   'capacity.min': "La capacité ne peut pas être négative.",
 
-  // Profil Étudiant
-  'gender.required': "Le sexe est obligatoire.",
-  'homeChurch.required': "L'église d'attache est obligatoire.",
-  'worker.required': "Le statut d'ouvrier est obligatoire.",
-  'format.required': "Le format (en ligne/présentiel) est obligatoire.",
-  'physiqueAddress.required': "L'adresse physique est obligatoire.",
-  'phoneNumber.required': "Le numéro de téléphone est obligatoire.",
-  'dateofbirth.required': "La date de naissance est obligatoire.",
-  'dateofbirth.date': "La date de naissance doit être une date valide."
+  // Inscription étudiants
+  'planningId.required': "La session (planning) est obligatoire.",
+  'planningId.number': "L'identifiant de la session doit être un nombre valide.",
+
+  'programId.number': "L'identifiant du programme doit être un nombre valide.",
+  'vacationId.number': "L'identifiant de la vacation doit être un nombre valide.",
+  'status.in': "Le statut sélectionné est invalide.",
 })
 

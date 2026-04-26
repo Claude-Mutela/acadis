@@ -1,30 +1,172 @@
 {
   "shared": {
-    "field_exists": "Ce champ existe déjà.",
-    "field_not_exists": "Ce champ n'existe pas."
-  },
-  "validator": {
     "required": "Le champ {{ field }} est obligatoire.",
+    "defined": "Le champ {{ field }} est obligatoire.",
     "string": "Le champ {{ field }} doit être une chaîne de caractères.",
-    "email": "Le champ {{ field }} doit être une adresse e-mail valide.",
     "minLength": "Le champ {{ field }} doit contenir au moins {{ min }} caractères.",
-    "maxLength": "Le champ {{ field }} ne doit pas dépasser {{ max }} caractères.",
-    "confirmed": "La confirmation du champ {{ field }} ne correspond pas.",
-    "unique": "La valeur du champ {{ field }} est déjà utilisée.",
-    "exists": "La valeur sélectionnée pour {{ field }} est invalide.",
-    "boolean": "Le champ {{ field }} doit être vrai ou faux.",
-    "number": "Le champ {{ field }} doit être un nombre.",
-    "min": "Le champ {{ field }} doit être supérieur ou égal à {{ min }}.",
-    "max": "Le champ {{ field }} doit être inférieur ou égal à {{ max }}.",
-    "regex": "Le format du champ {{ field }} est invalide.",
-    "url": "Le champ {{ field }} doit être une URL valide.",
-    "enum": "La valeur du champ {{ field }} est invalide.",
+    "maxLength": "Le champ {{ field }} ne peut pas dépasser {{ max }} caractères.",
+    "number": "Le champ {{ field }} doit être un nombre valide.",
+    "enum": "La valeur du champ {{ field }} est invalide. Valeurs acceptées : {{ options }}.",
+    "array": "Le champ {{ field }} doit être une liste.",
     "date": "Le champ {{ field }} doit être une date valide.",
-    "before": "Le champ {{ field }} doit être une date antérieure à {{ before }}.",
-    "after": "Le champ {{ field }} doit être une date ultérieure à {{ after }}.",
+    "regex": "Le format du champ {{ field }} est invalide."
+  },
+  "fields": {
+    "array": {
+      "minLength": "Le champ {{ field }} doit contenir au moins {{ min }} élément(s)."
+    },
     "file": {
       "size": "Le fichier {{ field }} ne doit pas dépasser {{ size }}.",
-      "extname": "L'extension du fichier {{ field }} doit être : {{ extnames }}."
+      "extname": "Le fichier {{ field }} doit avoir une extension valide : {{ extnames }}.",
+      "required": "Le fichier PDF est obligatoire.",
+      "file.extname": "Le fichier doit être au format PDF.",
+      "file.size": "Le fichier est trop lourd (max 20Mo)."
+    },
+    "date": {
+      "format": "Le champ {{ field }} doit respecter le format {{ format }}."
+    },
+    "name": {
+      "required": "L'intitulé est obligatoire.",
+      "minLength": "L'intitulé doit contenir au moins {{ min }} caractères."
+    },
+    "title": {
+      "required": "Le titre est obligatoire.",
+      "minLength": "Le titre doit contenir au moins {{ min }} caractères."
+    },
+    "order": {
+      "required": "Le numéro d'ordre est obligatoire.",
+      "number": "Le numéro d'ordre doit être un nombre valide.",
+      "min": "Le numéro d'ordre doit être supérieur ou égal à {{ min }}."
+    },
+    "price": {
+      "required": "Le prix est obligatoire.",
+      "number": "Le prix doit être un nombre valide.",
+      "min": "Le prix ne peut pas être négatif."
+    },
+    "coverImage": {
+      "extnames": "L'image doit être au format JPG, PNG ou WEBP.",
+      "size": "L'image est trop lourde (max 5Mo)."
+    },
+    "description": {
+      "required": "La description est obligatoire.",
+      "minLength": "La description doit contenir au moins {{ min }} caractères."
+    },
+    "presentation": {
+      "required": "La présentation synthétique est obligatoire.",
+      "minLength": "La présentation doit contenir au moins {{ min }} caractères."
+    },
+    "duration": {
+      "required": "Le volume horaire est obligatoire."
+    },
+    "trainerId": {
+      "required": "L'expert assigné est obligatoire."
+    },
+    "objectives": {
+      "required": "Au moins un objectif pédagogique est requis."
+    },
+    "outputProfile": {
+      "required": "Au moins un profil de sortie est requis."
+    },
+    "cohortId": {
+      "required": "La sélection de la cohorte est obligatoire."
+    },
+    "programId": {
+      "required": "Le programme est obligatoire.",
+      "number": "L'identifiant du programme doit être un nombre valide."
+    },
+    "day": {
+      "required": "Le jour de la semaine est obligatoire."
+    },
+    "startTime": {
+      "required": "L'heure de début est obligatoire.",
+      "regex": "Le format de l'heure de début doit être HH:MM."
+    },
+    "endTime": {
+      "required": "L'heure de fin est obligatoire.",
+      "regex": "Le format de l'heure de fin doit être HH:MM."
+    },
+    "firstName": {
+      "required": "Le prénom est obligatoire.",
+      "minLength": "Le prénom doit contenir au moins {{ min }} caractères.",
+      "maxLength": "Le prénom ne peut pas dépasser {{ max }} caractères."
+    },
+    "lastName": {
+      "required": "Le nom de famille est obligatoire.",
+      "minLength": "Le nom de famille doit contenir au moins {{ min }} caractères.",
+      "maxLength": "Le nom de famille ne peut pas dépasser {{ max }} caractères."
+    },
+    "email": {
+      "required": "L'adresse email est obligatoire.",
+      "email": "L'adresse email doit être valide.",
+      "database.unique": "Cette adresse email est déjà utilisée."
+    },
+    "password": {
+      "required": "Le mot de passe est obligatoire.",
+      "minLength": "Le mot de passe doit contenir au moins {{ min }} caractères.",
+      "maxLength": "Le mot de passe ne peut pas dépasser {{ max }} caractères."
+    },
+    "role": {
+      "required": "Le rôle est obligatoire.",
+      "enum": "Le rôle sélectionné est invalide."
+    },
+    "status": {
+      "required": "Le statut est obligatoire.",
+      "enum": "Le statut sélectionné est invalide.",
+      "in": "Le statut sélectionné est invalide."
+    },
+    "gender": {
+      "required": "Le genre est obligatoire.",
+      "in": "Le genre doit être M (Masculin) ou F (Féminin)."
+    },
+    "homeChurch": {
+      "required": "L'église d'attache est obligatoire.",
+      "minLength": "Le nom de l'église doit contenir au moins {{ min }} caractères."
+    },
+    "specialization": {
+      "required": "La spécialisation est obligatoire."
+    },
+    "worker": {
+      "required": "Le statut d'ouvrier est obligatoire."
+    },
+    "ministry": {
+      "maxLength": "Le nom du ministère ne peut pas dépasser {{ max }} caractères."
+    },
+    "phoneNumber": {
+      "required": "Le numéro de téléphone est obligatoire.",
+      "minLength": "Le numéro de téléphone doit contenir au moins {{ min }} chiffres.",
+      "maxLength": "Le numéro de téléphone ne peut pas dépasser {{ max }} caractères."
+    },
+    "dateofbirth": {
+      "date": "La date de naissance doit être une date valide.",
+      "format": "La date de naissance doit respecter le format AAAA-MM-JJ."
+    },
+    "slug": {
+      "required": "Le slug est obligatoire.",
+      "database.unique": "Ce slug est déjà utilisé."
+    },
+    "startDate": {
+      "required": "La date de début est obligatoire.",
+      "date": "La date de début doit être une date valide."
+    },
+    "endDate": {
+      "required": "La date de fin est obligatoire.",
+      "date": "La date de fin doit être une date valide."
+    },
+    "type": {
+      "required": "Le type de session est obligatoire.",
+      "enum": "Le type sélectionné est invalide."
+    },
+    "capacity": {
+      "required": "La capacité (places totales) est obligatoire.",
+      "number": "La capacité doit être un nombre valide.",
+      "min": "La capacité ne peut pas être négative."
+    },
+    "planningId": {
+      "required": "La session (planning) est obligatoire.",
+      "number": "L'identifiant de la session doit être un nombre valide."
+    },
+    "vacationId": {
+      "number": "L'identifiant de la vacation doit être un nombre valide."
     }
   }
 }

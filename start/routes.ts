@@ -44,6 +44,9 @@ router.put('/administration/formateurs/:id', [controllers.Trainers, 'update']).a
 router.delete('/administration/formateurs/:id', [controllers.Trainers, 'destroy']).as('admin.formateurs.destroy')
 // Etudiants
 router.get('/administration/etudiants', [controllers.Students, 'index']).as('admin.etudiants.index')
+router.post('/administration/etudiants', [controllers.Students, 'store']).as('admin.etudiants.store')
+router.put('/administration/etudiants/:id', [controllers.Students, 'update']).as('admin.etudiants.update')
+router.delete('/administration/etudiants/:id', [controllers.Students, 'destroy']).as('admin.etudiants.destroy')
 // Paiements
 router.on('/administration/paiements').renderInertia('administration/paiements/index', {}).as('admin.paiements.index')
 // Programmes & Catégories
