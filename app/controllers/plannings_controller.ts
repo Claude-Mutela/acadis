@@ -5,9 +5,14 @@ import { planningValidator } from '#validators/planning'
 
 export default class PlanningsController {
   async index({ inertia }: HttpContext) {
-    const plannings = await Planning.query().preload('cohorts', (query) => {
-      query.preload('programs')
-    }).orderBy('created_at', 'desc')
+    const plannings = await Planning.query()
+      .preload('cohorts', (query) => {
+        query.preload('programs')
+      })
+      .withCount('enrollments', (query) => {
+        query.whereIn('status', ['pending', 'confirmed'])
+      })
+      .orderBy('created_at', 'desc')
     
     const allCohorts = await Cohort.query().preload('programs').orderBy('name', 'asc')
 
@@ -23,7 +28,7 @@ export default class PlanningsController {
         dateFin: p.endDate ? p.endDate.toISODate() : null,
         type: p.type,
         placesTotales: p.capacity,
-        placesReservees: 0,
+        placesReservees: Number(p.$extras.enrollments_count) || 0,
         statut: p.status
       }
     })
