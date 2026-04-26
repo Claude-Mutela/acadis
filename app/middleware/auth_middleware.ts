@@ -20,6 +20,12 @@ export default class AuthMiddleware {
     } = {}
   ) {
     await ctx.auth.authenticateUsing(options.guards, { loginRoute: this.redirectTo })
+    
+    // Empêche le navigateur de mettre en cache les pages protégées
+    ctx.response.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    ctx.response.header('Pragma', 'no-cache')
+    ctx.response.header('Expires', '0')
+
     return next()
   }
 }

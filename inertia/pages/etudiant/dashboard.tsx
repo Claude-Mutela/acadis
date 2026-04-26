@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react'
+import { Head, usePage } from '@inertiajs/react'
 import StudentLayout from '../../components/etudiant/StudentLayout'
 import { PlayCircle, Clock, BookOpen, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 import { useState } from 'react'
@@ -26,6 +26,7 @@ const enrolledPrograms = [
 ]
 
 export default function StudentDashboard() {
+  const { props } = usePage<any>()
   const [programs, setPrograms] = useState(enrolledPrograms)
   const [isUnenrollModalOpen, setIsUnenrollModalOpen] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<number | null>(null)
@@ -36,7 +37,7 @@ export default function StudentDashboard() {
       setIsUnenrollModalOpen(false)
     }
   }
-
+  
   return (
     <StudentLayout title="Mon Apprentissage">
       <Head title="Mes Cours — Espace Étudiant" />
@@ -44,7 +45,7 @@ export default function StudentDashboard() {
       {/* Message de bienvenue */}
       <div className="bg-gradient-to-r from-orange to-orange-600 rounded-3xl p-8 text-white shadow-lg shadow-orange/20 mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black mb-2">Bonjour Emmanuel ! 👋</h1>
+          <h1 className="text-3xl font-black mb-2">Bonjour {props.user?.firstName} ! 👋</h1>
           <p className="text-white/80 font-medium text-lg">Prêt à continuer votre progression spirituelle aujourd'hui ?</p>
         </div>
         <div className="hidden md:flex items-center justify-center w-24 h-24 bg-white/10 rounded-full backdrop-blur-md">

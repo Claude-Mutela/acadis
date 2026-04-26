@@ -6,7 +6,11 @@ export default class UserTransformer extends BaseTransformer<User> {
     return this.pick(this.resource, [
       'id',
       'fullName',
+      'firstName',
+      'lastName',
       'email',
+      'role',
+      'status',
       'createdAt',
       'updatedAt',
       'initials',

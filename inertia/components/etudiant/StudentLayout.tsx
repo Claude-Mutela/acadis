@@ -10,7 +10,7 @@ interface StudentLayoutProps {
 }
 
 export default function StudentLayout({ children, title }: StudentLayoutProps) {
-  const { url } = usePage()
+  const { url, props } = usePage<any>()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
 
   const navItems = [
@@ -83,12 +83,12 @@ export default function StudentLayout({ children, title }: StudentLayoutProps) {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-3 p-1.5 pr-3 hover:bg-gray-50 rounded-full transition-colors border border-transparent hover:border-gray-200"
               >
-                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-black flex items-center justify-center">
-                  EB
+                <div className="w-10 h-10 rounded-full bg-orange/10 text-orange font-black flex items-center justify-center">
+                  {props.user?.initials}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-sm font-bold text-gray-900 leading-tight">Emmanuel Béni</p>
-                  <p className="text-xs font-medium text-gray-500">Apprenant</p>
+                  <p className="text-sm font-bold text-gray-900 leading-tight">{props.user?.fullName}</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{props.user?.role === 'student' ? 'Apprenant' : props.user?.role}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </button>
@@ -97,7 +97,12 @@ export default function StudentLayout({ children, title }: StudentLayoutProps) {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg shadow-black/5 border border-gray-100 py-2 z-50 animate-fade-in-up">
                   <Link href="/etudiant/profil" className="block px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50">Mon profil complet</Link>
                   <hr className="my-2 border-gray-100" />
-                  <Link href="/logout" className="block px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50">Déconnexion</Link>
+                  <Link href="/logout" method="post" as="button" className="w-full text-left block px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <LogOut className="w-4 h-4" />
+                      Déconnexion
+                    </div>
+                  </Link>
                 </div>
               )}
             </div>

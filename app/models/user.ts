@@ -35,6 +35,10 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
     return defaultInitials
   }
 
+  get fullName() {
+    return `${this.firstName} ${this.lastName}`
+  }
+
   get isAdmin() {
     return ['superadmin', 'admin', 'financial', 'supervisor'].includes(this.role)
   }

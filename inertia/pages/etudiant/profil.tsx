@@ -1,25 +1,26 @@
 import { useState, useRef } from 'react'
-import { Head } from '@inertiajs/react'
+import { Head, usePage } from '@inertiajs/react'
 import StudentLayout from '../../components/etudiant/StudentLayout'
 import { Camera, Save, UserCircle2, Mail, Phone, MapPin, Building2, CheckCircle } from 'lucide-react'
 
 export default function StudentProfil() {
+  const { props } = usePage<any>()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isSaved, setIsSaved] = useState(false)
   
   // State du profil complet (identique aux champs demandés dans l'admin)
   const [profile, setProfile] = useState({
-    prenom: 'Emmanuel',
-    nom: 'Béni',
-    email: 'emmanuel.beni@example.com',
-    telephone: '+243 990 000 000',
-    sexe: 'M',
-    dateNaissance: '2000-01-01',
-    adresse: '',
-    egliseAttache: 'Église Compassion',
-    departement: 'Intercession',
-    estOuvrier: 'Oui'
+    prenom: props.user?.firstName || '',
+    nom: props.user?.lastName || '',
+    email: props.user?.email || '',
+    telephone: props.user?.phone || '+243 000 000 000',
+    sexe: props.user?.studentProfile?.gender || 'M',
+    dateNaissance: props.user?.studentProfile?.dateofbirth || '2000-01-01',
+    adresse: props.user?.studentProfile?.physiqueAddress || '',
+    egliseAttache: props.user?.studentProfile?.homeChurch || '',
+    departement: props.user?.studentProfile?.ministry || '',
+    estOuvrier: props.user?.studentProfile?.worker || 'Non'
   })
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {

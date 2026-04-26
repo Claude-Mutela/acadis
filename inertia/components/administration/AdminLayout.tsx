@@ -17,15 +17,16 @@ import {
 } from 'lucide-react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/administration/dashboard', icon: LayoutDashboard },
-  { name: 'Utilisateurs', href: '/administration/utilisateurs', icon: Users },
-  { name: 'Étudiants', href: '/administration/etudiants', icon: Users },
-  { name: 'Ministères', href: '/administration/ministeres', icon: Landmark },
-  { name: 'Cohortes', href: '/administration/cohortes', icon: Layers },
-  { name: 'Formateurs', href: '/administration/formateurs', icon: GraduationCap },
-  { name: 'Programmes', href: '/administration/programmes', icon: BookOpen },
-  { name: 'Paiements', href: '/administration/paiements', icon: CreditCard },
-  { name: 'Planning', href: '/administration/planning', icon: CalendarDays },
+  { name: 'Dashboard', href: '/administration/dashboard', icon: LayoutDashboard, roles: ['superadmin', 'admin', 'financial', 'supervisor'] },
+  { name: 'Utilisateurs', href: '/administration/utilisateurs', icon: Users, roles: ['superadmin'] },
+  { name: 'Étudiants', href: '/administration/etudiants', icon: Users, roles: ['superadmin', 'admin', 'supervisor'] },
+  { name: 'Ministères', href: '/administration/ministeres', icon: Landmark, roles: ['superadmin', 'admin'] },
+  { name: 'Cohortes', href: '/administration/cohortes', icon: Layers, roles: ['superadmin', 'admin'] },
+  { name: 'Formateurs', href: '/administration/formateurs', icon: GraduationCap, roles: ['superadmin', 'admin'] },
+  { name: 'Programmes', href: '/administration/programmes', icon: BookOpen, roles: ['superadmin', 'admin'] },
+  { name: 'Paiements', href: '/administration/paiements', icon: CreditCard, roles: ['superadmin', 'admin', 'financial'] },
+  { name: 'Planning', href: '/administration/planning', icon: CalendarDays, roles: ['superadmin', 'admin'] },
+  { name: 'Présences', href: '/administration/presences', icon: CalendarDays, roles: ['superadmin', 'admin', 'supervisor'] },
 ]
 
 export default function AdminLayout({ children, title = 'Administration', description }: { children: React.ReactNode, title?: string, description?: string }) {
@@ -70,7 +71,9 @@ export default function AdminLayout({ children, title = 'Administration', descri
         </div>
         
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-          {navigation.map((item) => {
+          {navigation
+            .filter(item => !item.roles || item.roles.includes(props.user?.role))
+            .map((item) => {
             const isActive = url.startsWith(item.href)
             return (
               <Link
@@ -125,11 +128,15 @@ export default function AdminLayout({ children, title = 'Administration', descri
                 className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 py-1.5 px-3 rounded-xl transition-colors border border-transparent hover:border-gray-200"
               >
                 <div className="w-9 h-9 rounded-full bg-orange text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                  JD
+                  {props.user?.initials}
                 </div>
                 <div className="hidden md:block text-sm text-left">
-                  <p className="font-bold text-gray-900 leading-tight">Jean Dupont</p>
-                  <p className="text-gray-500 text-xs">Directeur Admin</p>
+                  <p className="font-bold text-gray-900 leading-tight">{props.user?.fullName}</p>
+                  <p className="text-gray-500 text-xs">
+                    {props.user?.role === 'superadmin' ? 'Directeur Admin' : 
+                     props.user?.role === 'financial' ? 'Directeur Financier' :
+                     props.user?.role === 'supervisor' ? 'Superviseur' : 'Administrateur'}
+                  </p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block ml-1" />
               </button>
@@ -138,7 +145,7 @@ export default function AdminLayout({ children, title = 'Administration', descri
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg shadow-black/5 border border-gray-100 py-2 z-50 animate-fade-in-up">
                   <Link href="/administration/profil" className="block px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50">Mon profil complet</Link>
                   <hr className="my-2 border-gray-100" />
-                  <Link href="/logout" className="block px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50">Déconnexion</Link>
+                  <Link href="/logout" method="post" as="button" className="w-full text-left block px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">Déconnexion</Link>
                 </div>
               )}
             </div>

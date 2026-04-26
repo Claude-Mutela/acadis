@@ -167,6 +167,12 @@
     },
     "vacationId": {
       "number": "L'identifiant de la vacation doit être un nombre valide."
+    },
+    "agreeTerms": {
+      "accepted": "Vous devez accepter les conditions d'utilisation et la charte de l'académie pour vous inscrire."
+    },
+    "password_confirmation": {
+      "confirmed": "La confirmation du mot de passe ne correspond pas."
     }
   }
 }

@@ -1,19 +1,22 @@
 import { useState, useRef } from 'react'
-import { Head } from '@inertiajs/react'
+import { Head, usePage } from '@inertiajs/react'
 import AdminLayout from '../../components/administration/AdminLayout'
 import { Camera, Save, UserCircle2, Mail, Phone, CheckCircle, Shield } from 'lucide-react'
 
 export default function AdminProfil() {
+  const { props } = usePage<any>()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isSaved, setIsSaved] = useState(false)
   
   const [profile, setProfile] = useState({
-    prenom: 'Jean',
-    nom: 'Dupont',
-    email: 'direction@acadis.org',
-    telephone: '+243 999 000 000',
-    fonction: 'Directeur Académique',
+    prenom: props.user?.firstName || '',
+    nom: props.user?.lastName || '',
+    email: props.user?.email || '',
+    telephone: props.user?.phone || '+243 000 000 000',
+    fonction: props.user?.role === 'superadmin' ? 'Directeur Admin' : 
+              props.user?.role === 'financial' ? 'Directeur Financier' :
+              props.user?.role === 'supervisor' ? 'Superviseur' : 'Administrateur',
   })
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {

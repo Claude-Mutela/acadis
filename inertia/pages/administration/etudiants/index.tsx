@@ -57,7 +57,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
         programme: program?.name || 'Non inscrit',
         session: vacation ? `${vacation.day} (${vacation.startTime} - ${vacation.endTime})` : '-',
         type: planning?.type || '-',
-        statut: latestEnrollment?.status || 'Aucun',
+        statut: latestEnrollment?.status || student.status || 'Aucun',
         cohort: cohort?.name || '-',
         estOuvrier: profile?.worker === 'Oui',
         departement: profile?.ministry || '-',

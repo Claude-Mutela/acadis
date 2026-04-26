@@ -11,11 +11,18 @@ export default class SessionController {
     const user = await User.verifyCredentials(email, password)
 
     await auth.use('web').login(user)
-    response.redirect().toRoute('home')
+    
+    // Redirection basée sur le rôle
+    if (user.role === 'student') {
+      return response.redirect().toRoute('student.dashboard')
+    }
+
+    return response.redirect().toRoute('admin.dashboard')
   }
 
-  async destroy({ auth, response }: HttpContext) {
+  async destroy({ auth, response, session }: HttpContext) {
     await auth.use('web').logout()
-    response.redirect().toRoute('session.create')
+    session.clear() // Efface absolument tout de la session
+    return response.redirect().toRoute('session.create')
   }
 }

@@ -23,6 +23,21 @@ export const signupValidator = vine.compile(
 )
 
 /**
+ * Validator to use for public signup (student default)
+ */
+export const publicSignupValidator = vine.compile(
+  vine.object({
+    firstName: vine.string().trim().minLength(2).maxLength(100),
+    lastName: vine.string().trim().minLength(2).maxLength(100),
+    email: email().unique({ table: 'users', column: 'email' }),
+    password: password().confirmed({
+      confirmationField: 'password_confirmation',
+    }),
+    agreeTerms: vine.accepted(),
+  })
+)
+
+/**
  * Validator to use when an admin creates a user (no password confirmation)
  */
 export const createUserValidator = vine.compile(

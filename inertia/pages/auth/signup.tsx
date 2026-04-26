@@ -3,7 +3,8 @@ import { Mail, Lock, UserPlus, ArrowLeft, User } from 'lucide-react'
 
 export default function Signup() {
   const { data, setData, post, processing, errors } = useForm({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     password_confirmation: '',
@@ -43,25 +44,48 @@ export default function Signup() {
           </div>
 
           <form className="space-y-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }} onSubmit={submit}>
-            {/* Nom complet */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Nom complet
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {/* Prénom */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Prénom
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={data.firstName}
+                    onChange={e => setData('firstName', e.target.value)}
+                    className="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all bg-gray-50 hover:bg-gray-100/50 focus:bg-white"
+                    placeholder="Jean"
+                    required
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={data.fullName}
-                  onChange={e => setData('fullName', e.target.value)}
-                  className="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all bg-gray-50 hover:bg-gray-100/50 focus:bg-white"
-                  placeholder="Jean Dupont"
-                  required
-                />
+                {errors.firstName && <div className="text-red-500 text-xs mt-1 font-medium">{errors.firstName}</div>}
               </div>
-              {errors.fullName && <div className="text-red-500 text-xs mt-1 font-medium">{errors.fullName}</div>}
+
+              {/* Nom */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Nom
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={data.lastName}
+                    onChange={e => setData('lastName', e.target.value)}
+                    className="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all bg-gray-50 hover:bg-gray-100/50 focus:bg-white"
+                    placeholder="Dupont"
+                    required
+                  />
+                </div>
+                {errors.lastName && <div className="text-red-500 text-xs mt-1 font-medium">{errors.lastName}</div>}
+              </div>
             </div>
 
             {/* Email */}
