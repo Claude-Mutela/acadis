@@ -3,6 +3,8 @@ import { belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import Planning from '#models/planning'
+import Program from '#models/program'
+import Vacation from '#models/vacation'
 
 export default class Enrollment extends EnrollmentSchema {
   @column()
@@ -16,4 +18,10 @@ export default class Enrollment extends EnrollmentSchema {
 
   @belongsTo(() => User, { foreignKey: 'enrolledBy' })
   declare enrolledByUser: BelongsTo<typeof User>
+
+  @belongsTo(() => Program)
+  declare program: BelongsTo<typeof Program>
+
+  @belongsTo(() => Vacation)
+  declare vacation: BelongsTo<typeof Vacation>
 }
