@@ -1,5 +1,5 @@
-import { Head, Link, useForm } from '@inertiajs/react'
-import { Mail, Lock, LogIn, ArrowLeft } from 'lucide-react'
+import { Head, Link, useForm, usePage } from '@inertiajs/react'
+import { Mail, Lock, LogIn, ArrowLeft, AlertCircle } from 'lucide-react'
 
 export default function Login() {
   const { data, setData, post, processing, errors } = useForm({
@@ -7,6 +7,9 @@ export default function Login() {
     password: '',
     remember: false,
   })
+
+  const { props } = usePage<any>()
+  const flashError: string | undefined = props.flash?.error
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,6 +44,12 @@ export default function Login() {
           </div>
 
           <form className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }} onSubmit={submit}>
+            {flashError && (
+              <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm font-medium animate-fade-in-up">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+                <span>{flashError}</span>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Adresse email
@@ -80,6 +89,8 @@ export default function Login() {
               </div>
               {errors.password && <div className="text-red-500 text-xs mt-1 font-medium">{errors.password}</div>}
             </div>
+
+           
 
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center">

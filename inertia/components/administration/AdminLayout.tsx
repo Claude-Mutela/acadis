@@ -17,9 +17,9 @@ import {
 } from 'lucide-react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/administration/dashboard', icon: LayoutDashboard, roles: ['superadmin', 'admin', 'financial', 'supervisor'] },
+  { name: 'Dashboard', href: '/administration/dashboard', icon: LayoutDashboard, roles: ['superadmin', 'admin', 'financial'] },
   { name: 'Utilisateurs', href: '/administration/utilisateurs', icon: Users, roles: ['superadmin'] },
-  { name: 'Étudiants', href: '/administration/etudiants', icon: Users, roles: ['superadmin', 'admin', 'supervisor'] },
+  { name: 'Étudiants', href: '/administration/etudiants', icon: Users, roles: ['superadmin', 'admin'] },
   { name: 'Ministères', href: '/administration/ministeres', icon: Landmark, roles: ['superadmin', 'admin'] },
   { name: 'Cohortes', href: '/administration/cohortes', icon: Layers, roles: ['superadmin', 'admin'] },
   { name: 'Formateurs', href: '/administration/formateurs', icon: GraduationCap, roles: ['superadmin', 'admin'] },

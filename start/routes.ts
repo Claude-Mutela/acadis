@@ -31,7 +31,11 @@ router
     
     // Utilisateurs
     router.get('/administration/utilisateurs', [controllers.Users, 'index']).as('admin.users.index')
-    router.on('/administration/presences').renderInertia('administration/presences', {}).as('admin.presences.index')
+    router.get('/administration/presences', [controllers.Presences, 'index']).as('admin.presences.index')
+    router.get('/administration/paiements', [controllers.Payments, 'index']).as('admin.paiements.index')
+    router.post('/administration/paiements', [controllers.Payments, 'store']).as('admin.paiements.store')
+    router.put('/administration/paiements/:id', [controllers.Payments, 'update']).as('admin.paiements.update')
+    router.delete('/administration/paiements/:id', [controllers.Payments, 'destroy']).as('admin.paiements.destroy')
     router.post('/administration/utilisateurs', [controllers.Users, 'store']).as('admin.users.store')
     router.put('/administration/utilisateurs/:id', [controllers.Users, 'update']).as('admin.users.update')
     router.delete('/administration/utilisateurs/:id', [controllers.Users, 'destroy']).as('admin.users.destroy')
