@@ -3,6 +3,7 @@ import Payment from '#models/payment'
 import User from '#models/user'
 import Manuel from '#models/manuel'
 import ManualPurchase from '#models/manual_purchase'
+import PaymentHistory from '#models/payment_history'
 import db from '@adonisjs/lucid/services/db'
 
 export default class PaymentsController {
@@ -12,10 +13,8 @@ export default class PaymentsController {
       .preload('invoice')
       .orderBy('createdAt', 'desc')
 
-    // Fetch ManualPurchases separately because relationship might be complex via ManualPurchase
     const manualPurchases = await ManualPurchase.query().preload('manuel')
     
-    // Map payments to include manual info for the frontend
     const serializedPayments = payments.map((p) => {
       const mp = manualPurchases.find((m) => m.paymentId === p.id)
       return {
@@ -41,8 +40,9 @@ export default class PaymentsController {
     })
   }
 
-  async store({ request, response, session }: HttpContext) {
+  async store({ auth, request, response, session }: HttpContext) {
     const { userId, manuelId, montant } = request.only(['userId', 'manuelId', 'montant'])
+    const admin = auth.user!
 
     const student = await User.find(userId)
     const manuel = await Manuel.find(manuelId)
@@ -60,10 +60,10 @@ export default class PaymentsController {
     await db.transaction(async (trx) => {
       const payment = new Payment()
       payment.userId = userId
-      payment.programId = manuel.programId // Required field in migration
+      payment.programId = manuel.programId
       payment.amount = montant.toString()
       payment.paymentType = 'cash'
-      payment.status = montant < manuel.price ? 'pending' : 'completed' // Acompte if less than price
+      payment.status = montant < manuel.price ? 'pending' : 'completed'
       payment.reference = `REF-${Date.now()}`
       payment.useTransaction(trx)
       await payment.save()
@@ -74,48 +74,101 @@ export default class PaymentsController {
       mp.paymentId = payment.id
       mp.useTransaction(trx)
       await mp.save()
+
+      // Record History
+      const history = new PaymentHistory()
+      history.paymentId = payment.id
+      history.studentName = student.fullName
+      history.manuelTitle = manuel.title
+      history.amount = montant
+      history.paymentType = 'cash'
+      history.status = payment.status
+      history.recordedById = admin.id
+      history.recordedByName = admin.fullName
+      history.actionType = 'CREATE'
+      history.useTransaction(trx)
+      await history.save()
     })
 
     session.flash('success', 'Paiement enregistré avec succès.')
     return response.redirect().back()
   }
 
-  async update({ params, request, response, session }: HttpContext) {
+  async update({ auth, params, request, response, session }: HttpContext) {
     const { montant } = request.only(['montant'])
-    const payment = await Payment.find(params.id)
+    const admin = auth.user!
+    const payment = await Payment.query().where('id', params.id).preload('user').first()
 
     if (!payment) {
       session.flash('error', 'Paiement introuvable.')
       return response.redirect().back()
     }
 
-    const mp = await ManualPurchase.findBy('paymentId', payment.id)
-    if (mp) {
-        await mp.load('manuel')
-        if (montant > mp.manuel.price) {
-            session.flash('error', `Le montant ne peut pas être supérieur au prix du manuel (${mp.manuel.price} $).`)
-            return response.redirect().back()
-        }
+    const mp = await ManualPurchase.query().where('paymentId', payment.id).preload('manuel').first()
+    
+    if (mp && montant > mp.manuel.price) {
+        session.flash('error', `Le montant ne peut pas être supérieur au prix du manuel (${mp.manuel.price} $).`)
+        return response.redirect().back()
     }
 
-    payment.amount = montant.toString()
-    // Update status based on amount if we have the manual
-    if (mp) {
-        payment.status = montant < mp.manuel.price ? 'pending' : 'completed'
-    }
-    
-    await payment.save()
+    await db.transaction(async (trx) => {
+        payment.amount = montant.toString()
+        if (mp) {
+            payment.status = montant < mp.manuel.price ? 'pending' : 'completed'
+        }
+        payment.useTransaction(trx)
+        await payment.save()
+
+        // Record History
+        const history = new PaymentHistory()
+        history.paymentId = payment.id
+        history.studentName = payment.user?.fullName || 'Inconnu'
+        history.manuelTitle = mp?.manuel?.title || 'N/A'
+        history.amount = montant
+        history.paymentType = payment.paymentType
+        history.status = payment.status
+        history.recordedById = admin.id
+        history.recordedByName = admin.fullName
+        history.actionType = 'UPDATE'
+        history.useTransaction(trx)
+        await history.save()
+    })
 
     session.flash('success', 'Paiement mis à jour avec succès.')
     return response.redirect().back()
   }
 
-  async destroy({ params, response, session }: HttpContext) {
-    const payment = await Payment.find(params.id)
-    if (payment) {
-      await payment.delete()
-      session.flash('success', 'Paiement supprimé avec succès.')
+  async destroy({ auth, params, response, session }: HttpContext) {
+    const admin = auth.user!
+    const payment = await Payment.query().where('id', params.id).preload('user').first()
+    
+    if (!payment) {
+      session.flash('error', 'Paiement introuvable.')
+      return response.redirect().back()
     }
+
+    const mp = await ManualPurchase.query().where('paymentId', payment.id).preload('manuel').first()
+
+    await db.transaction(async (trx) => {
+        // Record History before deletion
+        const history = new PaymentHistory()
+        history.paymentId = payment.id
+        history.studentName = payment.user?.fullName || 'Inconnu'
+        history.manuelTitle = mp?.manuel?.title || 'N/A'
+        history.amount = Number(payment.amount)
+        history.paymentType = payment.paymentType
+        history.status = payment.status
+        history.recordedById = admin.id
+        history.recordedByName = admin.fullName
+        history.actionType = 'DELETE'
+        history.useTransaction(trx)
+        await history.save()
+
+        payment.useTransaction(trx)
+        await payment.delete()
+    })
+
+    session.flash('success', 'Paiement supprimé avec succès.')
     return response.redirect().back()
   }
 }
