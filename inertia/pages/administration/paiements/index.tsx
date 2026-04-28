@@ -1,46 +1,48 @@
 import { useState, useMemo } from 'react'
-import { Head } from '@inertiajs/react'
+import { Head, router, useForm } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
 import { 
   Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, 
   DollarSign, Book, Smartphone, Banknote, Printer, CheckCircle, Clock, ChevronDown, CreditCard
 } from 'lucide-react'
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-const studentsList = [
-  { id: 1, nom: 'Dupont', prenom: 'Jean' },
-  { id: 2, nom: 'Mvuba', prenom: 'Alice' },
-  { id: 3, nom: 'Nkongolo', prenom: 'Fabrice' },
-  { id: 4, nom: 'Kasongo', prenom: 'Sarah' },
-  { id: 5, nom: 'Ilunga', prenom: 'Marc' },
-  { id: 6, nom: 'Lwamba', prenom: 'Rachel' },
-  { id: 7, nom: 'Tshiani', prenom: 'David' },
-]
+type Paiement = {
+  id: number
+  etudiant: string
+  manuel: string
+  montant: number
+  methode: string
+  statut: string
+  date: string
+  userId: number
+  manuelId: number
+}
 
-const manuelsList = [
-  'Manuel: Parcours Fondamental',
-  'Manuel: École des Ouvriers',
-  'Manuel: Face à moi-même',
-  'Manuel: Leadership Biblique',
-  'Livre: Le Combat Spirituel',
-  'Support de cours divers'
-]
+type Student = {
+  id: number
+  nom: string
+  prenom: string
+}
 
-const initialPayments = [
-  { id: 1001, etudiant: 'Jean Dupont', manuel: 'Manuel: Parcours Fondamental', montant: 25, methode: 'Mobile Money', statut: 'Complet', date: '12 Mar 2026' },
-  { id: 1002, etudiant: 'Alice Mvuba', manuel: 'Manuel: École des Ouvriers', montant: 15, methode: 'Cash', statut: 'Acompte', date: '11 Mar 2026' },
-  { id: 1003, etudiant: 'Fabrice Nkongolo', manuel: 'Manuel: Leadership Biblique', montant: 30, methode: 'Card', statut: 'Complet', date: '08 Mar 2026' },
-  { id: 1004, etudiant: 'Sarah Kasongo', manuel: 'Manuel: Parcours Fondamental', montant: 25, methode: 'Mobile Money', statut: 'Complet', date: '05 Mar 2026' },
-  { id: 1005, etudiant: 'Marc Ilunga', manuel: 'Livre: Le Combat Spirituel', montant: 10, methode: 'Cash', statut: 'Complet', date: '02 Mar 2026' },
-  { id: 1006, etudiant: 'Rachel Lwamba', manuel: 'Manuel: Face à moi-même', montant: 12, methode: 'Cash', statut: 'Acompte', date: '28 Fév 2026' },
-  { id: 1007, etudiant: 'David Tshiani', manuel: 'Support de cours divers', montant: 5, methode: 'Mobile Money', statut: 'Complet', date: '25 Fév 2026' },
-]
+type Manuel = {
+  id: number
+  title: string
+  price: number
+}
 
-type Paiement = typeof initialPayments[0]
+interface Props {
+  initialPayments: Paiement[]
+  studentsList: Student[]
+  manuelsList: Manuel[]
+}
 
-// ── Component ─────────────────────────────────────────────────────────────────
-export default function PaiementsIndex() {
-  const [payments, setPayments] = useState<Paiement[]>(initialPayments)
+export default function PaiementsIndex({ initialPayments, studentsList, manuelsList }: Props) {
+  const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
+    userId: 0,
+    manuelId: manuelsList[0]?.id || 0,
+    montant: 0,
+  })
+  const payments = initialPayments
   
   // États de recherche et filtre
   const [search, setSearch] = useState('')
@@ -97,28 +99,31 @@ export default function PaiementsIndex() {
     return studentsList.filter(s => 
       `${s.prenom} ${s.nom}`.toLowerCase().includes(studentSearch.toLowerCase())
     )
-  }, [studentSearch])
+  }, [studentSearch, studentsList])
+
+  const selectedManuel = useMemo(() => {
+    return manuelsList.find(m => m.id === data.manuelId)
+  }, [data.manuelId, manuelsList])
 
   // ── Actions CRUD ─────────────────────────────────────────────────────────────
   const openCreateModal = () => {
     setModalMode('create')
     setStudentSearch('')
-    setCurrentPayment({ 
-      id: 0, 
-      etudiant: '', 
-      manuel: manuelsList[0], 
-      montant: 25, 
-      methode: 'Cash', 
-      statut: 'Complet', 
-      date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) 
-    })
+    reset()
+    clearErrors()
     setIsModalOpen(true)
   }
 
   const openEditModal = (payment: Paiement) => {
     setModalMode('edit')
     setStudentSearch(payment.etudiant)
-    setCurrentPayment({ ...payment })
+    setCurrentPayment(payment)
+    setData({
+      userId: payment.userId,
+      manuelId: payment.manuelId,
+      montant: payment.montant,
+    })
+    clearErrors()
     setIsModalOpen(true)
   }
 
@@ -129,23 +134,31 @@ export default function PaiementsIndex() {
 
   const handleSavePayment = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!currentPayment || !currentPayment.etudiant.trim()) return
+    
+    if (selectedManuel && data.montant > selectedManuel.price) {
+      // Inline validation if needed, but we also have server-side
+      return
+    }
 
     if (modalMode === 'create') {
-      const newId = payments.length > 0 ? Math.max(...payments.map(p => p.id)) + 1 : 1001
-      setPayments([{ ...currentPayment, id: newId }, ...payments])
-    } else {
-      setPayments(payments.map(p => p.id === currentPayment.id ? currentPayment : p))
+      post('/administration/paiements', {
+        onSuccess: () => setIsModalOpen(false),
+      })
+    } else if (currentPayment) {
+      put(`/administration/paiements/${currentPayment.id}`, {
+        onSuccess: () => setIsModalOpen(false),
+      })
     }
-    
-    setIsModalOpen(false)
   }
 
   const confirmDelete = () => {
     if (currentPayment) {
-      setPayments(payments.filter(p => p.id !== currentPayment.id))
-      setIsDeleteModalOpen(false)
-      setCurrentPayment(null)
+      router.delete(`/administration/paiements/${currentPayment.id}`, {
+        onSuccess: () => {
+          setIsDeleteModalOpen(false)
+          setCurrentPayment(null)
+        }
+      })
     }
   }
 
@@ -360,7 +373,7 @@ export default function PaiementsIndex() {
       </div>
 
       {/* Modal Formulaire (Ajout / Modification) */}
-      {isModalOpen && currentPayment && (
+      {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
           <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
@@ -385,12 +398,11 @@ export default function PaiementsIndex() {
                     value={studentSearch} 
                     onChange={e => {
                       setStudentSearch(e.target.value)
-                      setCurrentPayment({...currentPayment, etudiant: e.target.value})
                       setIsStudentDropdownOpen(true)
                     }}
                     onFocus={() => setIsStudentDropdownOpen(true)}
                     onBlur={() => setTimeout(() => setIsStudentDropdownOpen(false), 200)}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all pr-10"
+                    className={`w-full px-4 py-2.5 bg-gray-50 border ${errors.userId ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all pr-10`}
                   />
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   
@@ -401,10 +413,10 @@ export default function PaiementsIndex() {
                           <div 
                             key={s.id} 
                             className="px-4 py-2.5 hover:bg-orange/10 cursor-pointer text-sm font-medium text-gray-700 hover:text-orange transition-colors"
-                            onClick={() => {
+                            onMouseDown={() => {
                               const fullName = `${s.prenom} ${s.nom}`
                               setStudentSearch(fullName)
-                              setCurrentPayment({...currentPayment, etudiant: fullName})
+                              setData('userId', s.id)
                               setIsStudentDropdownOpen(false)
                             }}
                           >
@@ -417,69 +429,41 @@ export default function PaiementsIndex() {
                     </div>
                   )}
                 </div>
+                {errors.userId && <p className="text-red-500 text-xs mt-1">{errors.userId}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">Manuel Vendu</label>
                 <select 
-                  value={currentPayment.manuel} 
-                  onChange={e => setCurrentPayment({...currentPayment, manuel: e.target.value})}
+                  value={data.manuelId} 
+                  onChange={e => setData('manuelId', parseInt(e.target.value))}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
                 >
                   {manuelsList.map(m => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m.id} value={m.id}>{m.title} ({m.price} $)</option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-5 relative z-0">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Montant ($)</label>
-                  <input 
-                    type="number" required min="1" step="any"
-                    value={currentPayment.montant} 
-                    onChange={e => setCurrentPayment({...currentPayment, montant: parseFloat(e.target.value)})}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Moyen de paiement</label>
-                  <select 
-                    value={currentPayment.methode} 
-                    onChange={e => setCurrentPayment({...currentPayment, methode: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Mobile Money">Mobile Money</option>
-                    <option value="Card">Card</option>
-                  </select>
-                </div>
-              </div>
-
               <div className="relative z-0">
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Statut</label>
-                <div className="flex gap-4 p-1 bg-gray-50 rounded-xl border border-gray-200">
-                  {['Complet', 'Acompte'].map(statut => (
-                    <label key={statut} className="flex-1">
-                      <input 
-                        type="radio" name="statutEncaissment" value={statut} 
-                        checked={currentPayment.statut === statut}
-                        onChange={e => setCurrentPayment({...currentPayment, statut: e.target.value})}
-                        className="sr-only peer"
-                      />
-                      <div className="text-center py-2 text-sm font-medium text-gray-500 rounded-lg cursor-pointer peer-checked:bg-white peer-checked:text-black peer-checked:shadow-sm peer-checked:font-bold transition-all">
-                        {statut}
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Montant ($)</label>
+                <input 
+                  type="number" required min="1" step="any"
+                  value={data.montant} 
+                  onChange={e => setData('montant', parseFloat(e.target.value))}
+                  className={`w-full px-4 py-2.5 bg-gray-50 border ${errors.montant || (selectedManuel && data.montant > selectedManuel.price) ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all font-bold`}
+                />
+                {(selectedManuel && data.montant > selectedManuel.price) && (
+                  <p className="text-red-500 text-xs mt-1">Le montant ne peut pas être supérieur au prix du manuel ({selectedManuel.price} $)</p>
+                )}
+                {errors.montant && <p className="text-red-500 text-xs mt-1">{errors.montant}</p>}
               </div>
 
               <div className="pt-4 flex gap-3 border-t border-gray-100">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors">
                   Annuler
                 </button>
-                <button type="submit" className="flex-1 py-3 bg-black hover:bg-gray-900 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-0.5">
+                <button type="submit" disabled={processing || (selectedManuel && data.montant > selectedManuel.price)} className="flex-1 py-3 bg-black hover:bg-gray-900 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
                   {modalMode === 'create' ? 'Encaisser' : 'Mettre à jour'}
                 </button>
               </div>
