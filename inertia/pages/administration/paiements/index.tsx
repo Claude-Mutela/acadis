@@ -16,6 +16,9 @@ type Paiement = {
   date: string
   userId: number
   manuelId: number
+  programId: number
+  vacationId: number
+  cohortId: number
 }
 
 type Student = {
@@ -34,9 +37,14 @@ interface Props {
   initialPayments: Paiement[]
   studentsList: Student[]
   manuelsList: Manuel[]
+  vacationsList: { id: number; title: string }[]
+  cohortsList: { id: number; title: string }[]
 }
 
-export default function PaiementsIndex({ initialPayments, studentsList, manuelsList }: Props) {
+export default function PaiementsIndex({ 
+  initialPayments, studentsList, manuelsList, 
+  vacationsList, cohortsList 
+}: Props) {
   const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
     userId: 0,
     manuelId: manuelsList[0]?.id || 0,
@@ -47,6 +55,8 @@ export default function PaiementsIndex({ initialPayments, studentsList, manuelsL
   // États de recherche et filtre
   const [search, setSearch] = useState('')
   const [filterStatut, setFilterStatut] = useState('Tous')
+  const [filterVacation, setFilterVacation] = useState('0')
+  const [filterCohort, setFilterCohort] = useState('0')
   
   // États de pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -77,11 +87,13 @@ export default function PaiementsIndex({ initialPayments, studentsList, manuelsL
         payment.manuel.toLowerCase().includes(search.toLowerCase()) ||
         payment.id.toString().includes(search)
       
-      const matchFilter = filterStatut === 'Tous' || payment.statut === filterStatut
+      const matchStatut = filterStatut === 'Tous' || payment.statut === filterStatut
+      const matchVacation = filterVacation === '0' || payment.vacationId === parseInt(filterVacation)
+      const matchCohort = filterCohort === '0' || payment.cohortId === parseInt(filterCohort)
       
-      return matchSearch && matchFilter
+      return matchSearch && matchStatut && matchVacation && matchCohort
     })
-  }, [payments, search, filterStatut])
+  }, [payments, search, filterStatut, filterVacation, filterCohort])
 
   const totalPages = Math.ceil(filteredPayments.length / itemsPerPage)
   
@@ -169,7 +181,7 @@ export default function PaiementsIndex({ initialPayments, studentsList, manuelsL
       
       {/* Actions Rapides (Recherche, Filtre, Ajout) */}
       <div className="flex flex-col md:flex-row items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <div className="flex-1 relative w-full md:max-w-md">
+        <div className="flex-[3] relative w-full md:min-w-[400px]">
           <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
@@ -180,16 +192,41 @@ export default function PaiementsIndex({ initialPayments, studentsList, manuelsL
           />
         </div>
         
-        <div className="w-full md:w-64 relative">
+        <div className="w-full md:w-48 relative">
           <Filter className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <select
             value={filterStatut}
             onChange={e => { setFilterStatut(e.target.value); setCurrentPage(1); }}
             className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
           >
-            <option value="Tous">Tous les statuts</option>
+            <option value="Tous">Statut</option>
             <option value="Complet">Complet</option>
             <option value="Acompte">Acompte</option>
+          </select>
+        </div>
+
+
+        <div className="w-full md:w-48 relative">
+          <Clock className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <select
+            value={filterVacation}
+            onChange={e => { setFilterVacation(e.target.value); setCurrentPage(1); }}
+            className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
+          >
+            <option value="0">Vacation</option>
+            {vacationsList.map(v => <option key={v.id} value={v.id}>{v.title}</option>)}
+          </select>
+        </div>
+
+        <div className="w-full md:w-48 relative">
+          <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <select
+            value={filterCohort}
+            onChange={e => { setFilterCohort(e.target.value); setCurrentPage(1); }}
+            className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
+          >
+            <option value="0">Cohorte</option>
+            {cohortsList.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
           </select>
         </div>
 

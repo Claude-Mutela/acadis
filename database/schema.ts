@@ -302,6 +302,37 @@ export class PaymentSchema extends BaseModel {
   declare userId: number
 }
 
+export class PaymentHistorySchema extends BaseModel {
+  static $columns = ['actionType', 'amount', 'createdAt', 'details', 'id', 'manuelTitle', 'paymentId', 'paymentType', 'recordedById', 'recordedByName', 'status', 'studentName', 'updatedAt'] as const
+  $columns = PaymentHistorySchema.$columns
+  @column()
+  declare actionType: string
+  @column()
+  declare amount: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare details: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare manuelTitle: string
+  @column()
+  declare paymentId: number | null
+  @column()
+  declare paymentType: string
+  @column()
+  declare recordedById: number | null
+  @column()
+  declare recordedByName: string
+  @column()
+  declare status: string
+  @column()
+  declare studentName: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class PlanningSchema extends BaseModel {
   static $columns = ['capacity', 'createdAt', 'endDate', 'id', 'startDate', 'status', 'type', 'updatedAt'] as const
   $columns = PlanningSchema.$columns

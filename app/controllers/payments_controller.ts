@@ -4,12 +4,21 @@ import User from '#models/user'
 import Manuel from '#models/manuel'
 import ManualPurchase from '#models/manual_purchase'
 import PaymentHistory from '#models/payment_history'
+import Program from '#models/program'
+import Vacation from '#models/vacation'
+import Cohort from '#models/cohort'
 import db from '@adonisjs/lucid/services/db'
 
 export default class PaymentsController {
   async index({ inertia }: HttpContext) {
     const payments = await Payment.query()
-      .preload('user')
+      .preload('user', (q) => {
+        q.preload('enrollments', (eq) => {
+          eq.preload('program').preload('vacation').preload('planning', (pq) => {
+            pq.preload('cohorts')
+          })
+        })
+      })
       .preload('invoice')
       .orderBy('createdAt', 'desc')
 
@@ -17,6 +26,11 @@ export default class PaymentsController {
     
     const serializedPayments = payments.map((p) => {
       const mp = manualPurchases.find((m) => m.paymentId === p.id)
+      const enrollment = p.user?.enrollments?.find(e => e.programId === p.programId) || p.user?.enrollments?.[0]
+      
+      // Fallback hierarchy for programId: Payment -> Manual -> Enrollment
+      const programId = p.programId || mp?.manuel?.programId || enrollment?.programId || 0
+
       return {
         id: p.id,
         etudiant: p.user?.fullName || 'Inconnu',
@@ -26,17 +40,24 @@ export default class PaymentsController {
         statut: p.status === 'completed' ? 'Complet' : 'Acompte',
         date: p.createdAt?.toFormat('dd LLL yyyy') || '',
         userId: p.userId,
-        manuelId: mp?.manuelId
+        manuelId: mp?.manuelId || 0,
+        programId: Number(programId),
+        vacationId: Number(enrollment?.vacationId || 0),
+        cohortId: Number(enrollment?.planning?.cohorts?.[0]?.id || 0)
       }
     })
 
     const students = await User.query().where('role', 'student').orderBy('firstName', 'asc')
     const manuals = await Manuel.query().orderBy('title', 'asc')
+    const vacations = await Vacation.query().orderBy('day', 'asc')
+    const cohorts = await Cohort.query().orderBy('name', 'asc')
 
     return inertia.render('administration/paiements/index', {
       initialPayments: serializedPayments,
       studentsList: students.map(s => ({ id: s.id, nom: s.lastName, prenom: s.firstName })),
-      manuelsList: manuals.map(m => ({ id: m.id, title: m.title, price: m.price }))
+      manuelsList: manuals.map(m => ({ id: m.id, title: m.title, price: m.price })),
+      vacationsList: vacations.map(v => ({ id: v.id, title: `${v.day} (${v.startTime}-${v.endTime})` })),
+      cohortsList: cohorts.map(c => ({ id: c.id, title: c.name }))
     })
   }
 
@@ -80,7 +101,7 @@ export default class PaymentsController {
       history.paymentId = payment.id
       history.studentName = student.fullName
       history.manuelTitle = manuel.title
-      history.amount = montant
+      history.amount = montant.toString()
       history.paymentType = 'cash'
       history.status = payment.status
       history.recordedById = admin.id
@@ -124,7 +145,7 @@ export default class PaymentsController {
         history.paymentId = payment.id
         history.studentName = payment.user?.fullName || 'Inconnu'
         history.manuelTitle = mp?.manuel?.title || 'N/A'
-        history.amount = montant
+        history.amount = montant.toString()
         history.paymentType = payment.paymentType
         history.status = payment.status
         history.recordedById = admin.id
@@ -155,7 +176,7 @@ export default class PaymentsController {
         history.paymentId = payment.id
         history.studentName = payment.user?.fullName || 'Inconnu'
         history.manuelTitle = mp?.manuel?.title || 'N/A'
-        history.amount = Number(payment.amount)
+        history.amount = payment.amount.toString()
         history.paymentType = payment.paymentType
         history.status = payment.status
         history.recordedById = admin.id
