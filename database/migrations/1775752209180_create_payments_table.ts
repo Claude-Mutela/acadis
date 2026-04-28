@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       table.integer('student_id').unsigned().references('students.id').onDelete('CASCADE').index().notNullable()
       table.integer('program_id').unsigned().references('programs.id').onDelete('CASCADE').index().notNullable()
       table.decimal('amount', 10, 2).notNullable()
-      table.enum('payment_type', ['cash', 'online']).notNullable()
+      table.enum('payment_type', ['cash', 'mobile_money', 'card']).notNullable()
       table.string('reference').notNullable()//numero de reçu ou transaction
       table.timestamp('paid_at').defaultTo(this.now())
       table.enum('status', ['pending', 'completed', 'failed']).notNullable()

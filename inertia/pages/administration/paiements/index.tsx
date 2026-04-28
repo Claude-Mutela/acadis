@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
 import { 
   Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, 
-  DollarSign, Book, Smartphone, Banknote, Printer, CheckCircle, Clock, ChevronDown
+  DollarSign, Book, Smartphone, Banknote, Printer, CheckCircle, Clock, ChevronDown, CreditCard
 } from 'lucide-react'
 
 // ── Mock Data ─────────────────────────────────────────────────────────────────
@@ -28,11 +28,11 @@ const manuelsList = [
 
 const initialPayments = [
   { id: 1001, etudiant: 'Jean Dupont', manuel: 'Manuel: Parcours Fondamental', montant: 25, methode: 'Mobile Money', statut: 'Complet', date: '12 Mar 2026' },
-  { id: 1002, etudiant: 'Alice Mvuba', manuel: 'Manuel: École des Ouvriers', montant: 15, methode: 'Espèces', statut: 'Acompte', date: '11 Mar 2026' },
-  { id: 1003, etudiant: 'Fabrice Nkongolo', manuel: 'Manuel: Leadership Biblique', montant: 30, methode: 'Mobile Money', statut: 'Complet', date: '08 Mar 2026' },
+  { id: 1002, etudiant: 'Alice Mvuba', manuel: 'Manuel: École des Ouvriers', montant: 15, methode: 'Cash', statut: 'Acompte', date: '11 Mar 2026' },
+  { id: 1003, etudiant: 'Fabrice Nkongolo', manuel: 'Manuel: Leadership Biblique', montant: 30, methode: 'Card', statut: 'Complet', date: '08 Mar 2026' },
   { id: 1004, etudiant: 'Sarah Kasongo', manuel: 'Manuel: Parcours Fondamental', montant: 25, methode: 'Mobile Money', statut: 'Complet', date: '05 Mar 2026' },
-  { id: 1005, etudiant: 'Marc Ilunga', manuel: 'Livre: Le Combat Spirituel', montant: 10, methode: 'Espèces', statut: 'Complet', date: '02 Mar 2026' },
-  { id: 1006, etudiant: 'Rachel Lwamba', manuel: 'Manuel: Face à moi-même', montant: 12, methode: 'Espèces', statut: 'Acompte', date: '28 Fév 2026' },
+  { id: 1005, etudiant: 'Marc Ilunga', manuel: 'Livre: Le Combat Spirituel', montant: 10, methode: 'Cash', statut: 'Complet', date: '02 Mar 2026' },
+  { id: 1006, etudiant: 'Rachel Lwamba', manuel: 'Manuel: Face à moi-même', montant: 12, methode: 'Cash', statut: 'Acompte', date: '28 Fév 2026' },
   { id: 1007, etudiant: 'David Tshiani', manuel: 'Support de cours divers', montant: 5, methode: 'Mobile Money', statut: 'Complet', date: '25 Fév 2026' },
 ]
 
@@ -64,7 +64,8 @@ export default function PaiementsIndex() {
   const totalEncaissé = payments.reduce((acc, curr) => acc + curr.montant, 0)
   const manuelsVendus = payments.length
   const totalMobileMoney = payments.filter(p => p.methode === 'Mobile Money').reduce((acc, curr) => acc + curr.montant, 0)
-  const totalEspeces = payments.filter(p => p.methode === 'Espèces').reduce((acc, curr) => acc + curr.montant, 0)
+  const totalCash = payments.filter(p => p.methode === 'Cash').reduce((acc, curr) => acc + curr.montant, 0)
+  const totalCard = payments.filter(p => p.methode === 'Card').reduce((acc, curr) => acc + curr.montant, 0)
 
   // ── Logique Métier (Filtrage & Pagination) ──────────────────────────────────
   const filteredPayments = useMemo(() => {
@@ -107,7 +108,7 @@ export default function PaiementsIndex() {
       etudiant: '', 
       manuel: manuelsList[0], 
       montant: 25, 
-      methode: 'Mobile Money', 
+      methode: 'Cash', 
       statut: 'Complet', 
       date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) 
     })
@@ -200,15 +201,6 @@ export default function PaiementsIndex() {
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Book className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-500">Manuels Vendus</p>
-            <p className="text-2xl font-black text-gray-900">{manuelsVendus}</p>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-orange/10 text-orange rounded-xl flex items-center justify-center flex-shrink-0">
             <Smartphone className="w-6 h-6" />
           </div>
@@ -218,12 +210,21 @@ export default function PaiementsIndex() {
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+            <CreditCard className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-500">Carte (Card)</p>
+            <p className="text-2xl font-black text-gray-900">${totalCard}</p>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center flex-shrink-0">
             <Banknote className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-500">Espèces</p>
-            <p className="text-2xl font-black text-gray-900">${totalEspeces}</p>
+            <p className="text-sm font-bold text-gray-500">Cash</p>
+            <p className="text-2xl font-black text-gray-900">${totalCash}</p>
           </div>
         </div>
       </div>
@@ -263,7 +264,9 @@ export default function PaiementsIndex() {
                     <td className="px-6 py-4">
                       <div className="font-black text-gray-900">${payment.montant.toFixed(2)}</div>
                       <div className="text-xs text-gray-500 font-medium flex items-center gap-1 mt-0.5">
-                        {payment.methode === 'Mobile Money' ? <Smartphone className="w-3 h-3" /> : <Banknote className="w-3 h-3" />}
+                        {payment.methode === 'Mobile Money' ? <Smartphone className="w-3 h-3" /> : 
+                         payment.methode === 'Card' ? <CreditCard className="w-3 h-3" /> : 
+                         <Banknote className="w-3 h-3" />}
                         {payment.methode}
                       </div>
                     </td>
@@ -446,8 +449,9 @@ export default function PaiementsIndex() {
                     onChange={e => setCurrentPayment({...currentPayment, methode: e.target.value})}
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
                   >
+                    <option value="Cash">Cash</option>
                     <option value="Mobile Money">Mobile Money</option>
-                    <option value="Espèces">Espèces</option>
+                    <option value="Card">Card</option>
                   </select>
                 </div>
               </div>
