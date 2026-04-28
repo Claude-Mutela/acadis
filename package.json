@@ -37,7 +37,7 @@
     "#config/*": "./config/*.js"
   },
   "devDependencies": {
-    "@adonisjs/assembler": "^8.0.0",
+    "@adonisjs/assembler": "^8.4.0",
     "@adonisjs/eslint-config": "^3.0.0",
     "@adonisjs/prettier-config": "^1.4.0",
     "@adonisjs/tsconfig": "^2.0.0",
