@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Head, router, usePage } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
 import { 
-  Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, User, Mail, BookOpen, Clock, Phone, Home, Globe
+  Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, User, Mail, BookOpen, Clock, Phone, Home, Globe, Printer
 } from 'lucide-react'
 
 interface StudentProp {
@@ -87,6 +87,14 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [currentStudent, setCurrentStudent] = useState<StudentProp | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  
+  // États pour le rapport d'impression
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [reportCohort, setReportCohort] = useState('Tous')
+  const [reportProgram, setReportProgram] = useState('Tous')
+  const [reportWorker, setReportWorker] = useState('Tous')
+  const [reportType, setReportType] = useState('Tous')
+  const [reportStudents, setReportStudents] = useState<StudentProp[]>([])
 
   // État du formulaire d'inscription
   const [formData, setFormData] = useState({
@@ -295,6 +303,27 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
     })
   }
 
+  const handlePrintReport = () => {
+    const filtered = students.filter(s => {
+      const matchCohort = reportCohort === 'Tous' || s.cohort === reportCohort
+      const matchProgram = reportProgram === 'Tous' || s.programme === reportProgram
+      const matchWorker = reportWorker === 'Tous' || 
+                         (reportWorker === 'Ouvriers' && s.estOuvrier) || 
+                         (reportWorker === 'Non-Ouvriers' && !s.estOuvrier)
+      const matchType = reportType === 'Tous' || s.type === reportType
+      
+      return matchCohort && matchProgram && matchWorker && matchType
+    })
+
+    setReportStudents(filtered)
+    setIsReportModalOpen(false)
+    
+    setTimeout(() => {
+      window.print()
+      setReportStudents([])
+    }, 500)
+  }
+
   // ── Rendu de l'UI ────────────────────────────────────────────────────────────
   return (
     <AdminLayout title="Étudiants" description="Gérez les inscriptions et les profils des disciples.">
@@ -343,13 +372,22 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
           </select>
         </div>
 
-        <button 
-          onClick={openCreateModal}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5 ml-auto"
-        >
-          <Plus className="w-4 h-4" />
-          Ajouter un étudiant
-        </button>
+        <div className="flex items-center gap-2 ml-auto w-full md:w-auto">
+          <button 
+            onClick={() => setIsReportModalOpen(true)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-bold py-2.5 px-5 rounded-xl text-sm border border-gray-200 shadow-sm transition-all hover:-translate-y-0.5"
+          >
+            <Printer className="w-5 h-5 text-gray-400" />
+            Imprimer
+          </button>
+          <button 
+            onClick={openCreateModal}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-4 h-4" />
+            Ajouter
+          </button>
+        </div>
       </div>
 
       {/* 3. Tableau Global (Card) */}
@@ -741,7 +779,89 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
         </div>
       )}
 
-      {/* 6. Modal Suppression */}
+      {/* Modal Impression Rapports */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsReportModalOpen(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <Printer className="w-5 h-5 text-orange" />
+                Imprimer un rapport
+              </h3>
+              <button onClick={() => setIsReportModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-white p-1 rounded-full shadow-sm">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Cohorte</label>
+                  <select 
+                    value={reportCohort}
+                    onChange={(e) => setReportCohort(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange outline-none"
+                  >
+                    <option value="Tous">Toutes les cohortes</option>
+                    {formattedCohorts.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Programme</label>
+                  <select 
+                    value={reportProgram}
+                    onChange={(e) => setReportProgram(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange outline-none"
+                  >
+                    <option value="Tous">Tous les programmes</option>
+                    {filters.allPrograms.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Statut Ouvrier</label>
+                    <select 
+                      value={reportWorker}
+                      onChange={(e) => setReportWorker(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange outline-none"
+                    >
+                      <option value="Tous">Tout le monde</option>
+                      <option value="Ouvriers">Ouvriers seulement</option>
+                      <option value="Non-Ouvriers">Non-ouvriers</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Type / Mode</label>
+                    <select 
+                      value={reportType}
+                      onChange={(e) => setReportType(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange outline-none"
+                    >
+                      <option value="Tous">Tous les modes</option>
+                      <option value="en ligne">Online</option>
+                      <option value="en présentiel">Onsite</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3 border-t border-gray-100">
+                <button onClick={() => setIsReportModalOpen(false)} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors">
+                  Annuler
+                </button>
+                <button 
+                  onClick={handlePrintReport}
+                  className="flex-1 py-3 bg-black hover:bg-gray-900 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-0.5"
+                >
+                  Générer le rapport
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Suppression */}
       {isDeleteModalOpen && currentStudent && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsDeleteModalOpen(false)} />
@@ -761,6 +881,85 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                 Supprimer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zone d'impression du rapport Étudiants */}
+      {reportStudents.length > 0 && (
+        <div id="printable-students-report" className="hidden print:block p-8 bg-white text-black font-sans">
+          <style>
+            {`
+              @media print {
+                @page { margin: 0; size: auto; }
+                body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                body * { visibility: hidden; }
+                #printable-students-report, #printable-students-report * { visibility: visible; }
+                #printable-students-report { 
+                  position: absolute; left: 0; top: 0; width: 100%; padding: 15mm; background: white;
+                }
+              }
+            `}
+          </style>
+          <div className="flex justify-between items-center mb-6 border-b-4 border-black pb-4">
+            <div className="flex items-center gap-4">
+              <img src="/logo ACADIS.png" alt="Logo ACADIS" className="w-16 h-auto" />
+              <div>
+                <h1 className="text-2xl font-black text-black uppercase tracking-tighter">ACADIS</h1>
+                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Liste des Étudiants / Disciples</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-black text-black">LISTE DES ÉTUDIANTS</p>
+              <p className="text-[10px] font-bold text-gray-600 uppercase">
+                {reportCohort !== 'Tous' && `Cohorte: ${reportCohort} | `}
+                {reportProgram !== 'Tous' && `Prog: ${reportProgram} | `}
+                {reportType !== 'Tous' && `Mode: ${reportType}`}
+              </p>
+            </div>
+          </div>
+
+          <table className="w-full border-collapse border-2 border-black">
+            <thead>
+              <tr className="bg-gray-100 border-b-2 border-black">
+                <th className="px-2 py-2 text-left text-[9px] font-black uppercase border-r border-black">#</th>
+                <th className="px-2 py-2 text-left text-[9px] font-black uppercase border-r border-black">Nom & Prénom</th>
+                <th className="px-2 py-2 text-left text-[9px] font-black uppercase border-r border-black">Contact</th>
+                <th className="px-2 py-2 text-left text-[9px] font-black uppercase border-r border-black">Programme / Cohorte</th>
+                <th className="px-2 py-2 text-left text-[9px] font-black uppercase border-r border-black">Type</th>
+                <th className="px-2 py-2 text-center text-[9px] font-black uppercase">Ouvrier</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-300">
+              {reportStudents.map((s, idx) => (
+                <tr key={s.id} className="border-b border-gray-200">
+                  <td className="px-2 py-1 text-[10px] border-r border-black text-center">{idx + 1}</td>
+                  <td className="px-2 py-1 text-[10px] border-r border-black font-bold uppercase">{s.nom} {s.prenom}</td>
+                  <td className="px-2 py-1 text-[9px] border-r border-black italic">{s.telephone} / {s.email}</td>
+                  <td className="px-2 py-1 text-[9px] border-r border-black">{s.programme} ({s.cohort})</td>
+                  <td className="px-2 py-1 text-[9px] border-r border-black uppercase text-center">{s.type}</td>
+                  <td className="px-2 py-1 text-[10px] text-center font-black">{s.estOuvrier ? 'OUI' : 'NON'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="mt-4 flex justify-between items-center bg-gray-100 p-3 border-2 border-black">
+            <p className="text-xs font-black uppercase">Total des étudiants listés :</p>
+            <p className="text-xl font-black">{reportStudents.length}</p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-2 gap-12">
+            <div className="border-t border-black pt-2 text-center">
+              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Le Secrétariat Académique</p>
+            </div>
+            <div className="border-t border-black pt-2 text-center">
+              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Cachet & Visa Direction</p>
+            </div>
+          </div>
+
+          <div className="mt-12 pt-4 text-center text-[8px] text-gray-400">
+            <p>Document officiel ACADIS - Généré le {new Date().toLocaleString('fr-FR')}</p>
           </div>
         </div>
       )}
