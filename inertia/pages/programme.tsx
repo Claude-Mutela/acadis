@@ -231,7 +231,7 @@ export default function Programmes() {
             Les inscriptions pour la prochaine vague de formation sont actuellement ouvertes. Prenez votre place dès aujourd'hui.
           </p>
           <Link
-            href="/contact"
+            href="/signup"
             className="inline-flex bg-black hover:bg-gray-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
           >
             Formulaire de candidature

@@ -226,7 +226,7 @@ export default function About() {
             <p className="text-gray-400">Rejoignez la prochaine vague d'étudiants d'ACADIS.</p>
           </div>
           <Link
-            href="/contact"
+            href="/signup"
             className="flex-shrink-0 inline-flex items-center justify-center bg-orange hover:bg-orange-600 text-white font-bold py-4 px-10 rounded-xl transition-all duration-200 shadow-xl"
           >
             S'inscrire maintenant
