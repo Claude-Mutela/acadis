@@ -10,7 +10,8 @@ interface LayoutProps {
 
 export default function Layout({ children, title = 'ACADIS — Académie des Disciples' }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { url } = usePage()
+  const { url, props } = usePage()
+  const user = props.user as any
 
   const isActive = (href: string) => {
     if (href === '/') return url === '/'
@@ -63,12 +64,29 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
 
             {/* CTA Button */}
             <div className="hidden md:flex items-center gap-3">
-              <Link
-                href="/contact"
-                className="bg-orange hover:bg-orange-600 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5"
-              >
-                S'inscrire
-              </Link>
+              {user ? (
+                <Link
+                  href={user.role === 'student' ? '/etudiant/dashboard' : '/administration/dashboard'}
+                  className="bg-black hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-md hover:-translate-y-0.5"
+                >
+                  Mon Espace
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-gray-700 hover:text-orange font-bold text-sm px-4 py-2 transition-all"
+                  >
+                    Connexion
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="bg-orange hover:bg-orange-600 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                  >
+                    S'inscrire
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -104,13 +122,33 @@ export default function Layout({ children, title = 'ACADIS — Académie des Dis
                 {link.label}
               </Link>
             ))}
-            <div className="pt-2">
-              <Link
-                href="/contact"
-                className="block bg-orange hover:bg-orange-600 text-white text-center px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
-              >
-                S'inscrire
-              </Link>
+            <div className="pt-2 flex flex-col gap-2">
+              {user ? (
+                <Link
+                  href={user.role === 'student' ? '/etudiant/dashboard' : '/administration/dashboard'}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block bg-black text-white text-center px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
+                >
+                  Mon Espace
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-gray-700 hover:text-orange text-center px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
+                  >
+                    Connexion
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block bg-orange hover:bg-orange-600 text-white text-center px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
+                  >
+                    S'inscrire
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

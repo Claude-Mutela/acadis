@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Link } from '@inertiajs/react'
+import { Link, usePage } from '@inertiajs/react'
 import Layout from '../components/Layout'
 import { BookOpen, ShieldCheck, Wrench, User, Award, HandHeart, Gift, Heart, Clock, ClipboardList, GraduationCap } from 'lucide-react'
 
@@ -119,6 +119,8 @@ const pointsCles = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const { props } = usePage()
+  const user = props.user as any
   const carouselRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -182,10 +184,10 @@ export default function Home() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/contact"
+                  href={user ? (user.role === 'student' ? '/etudiant/dashboard' : '/administration/dashboard') : '/signup'}
                   className="inline-flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 shadow-lg hover:shadow-orange/30 hover:-translate-y-0.5 text-base"
                 >
-                  S'inscrire à la prochaine session
+                  {user ? 'Accéder à mon espace' : 'S\'inscrire à la prochaine session'}
                 </Link>
                 <Link
                   href="/programme"
@@ -518,10 +520,10 @@ export default function Home() {
           </p>
 
           <Link
-            href="/contact"
+            href={user ? (user.role === 'student' ? '/etudiant/dashboard' : '/administration/dashboard') : '/signup'}
             className="inline-flex items-center justify-center gap-2 bg-black hover:bg-gray-900 text-white font-black py-4 px-10 rounded-xl transition-all duration-200 shadow-xl hover:shadow-black/30 hover:-translate-y-0.5 text-lg"
           >
-            Remplir le formulaire d'inscription
+            {user ? 'Retourner au tableau de bord' : 'Remplir le formulaire d\'inscription'}
           </Link>
 
           {/* Signature */}
