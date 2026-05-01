@@ -34,6 +34,34 @@ export default class ProgrammesController {
     })
   }
 
+  async publicIndex({ inertia }: HttpContext) {
+    const programs = await Program.query()
+      .where('status', 'active')
+      .preload('category')
+      .orderBy('name', 'asc')
+
+    const categories = await ProgramCategory.query().orderBy('name', 'asc')
+
+    return inertia.render('programme', {
+      programs: programs.map((p) => p.serialize()),
+      categories: categories.map((c) => c.serialize()),
+    })
+  }
+
+  async publicShow({ params, inertia }: HttpContext) {
+    const program = await Program.query()
+      .where('slug', params.slug)
+      .where('status', 'active')
+      .preload('category')
+      .preload('modules', (q) => q.orderBy('order', 'asc'))
+      .preload('manuels')
+      .firstOrFail()
+
+    return inertia.render('programme_detail', {
+      program: program.serialize(),
+    })
+  }
+
   async store({ request, response, session }: HttpContext) {
     const payload = await request.validateUsing(createProgramValidator)
     

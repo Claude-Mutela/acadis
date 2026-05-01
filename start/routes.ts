@@ -13,14 +13,12 @@ import router from '@adonisjs/core/services/router'
 
 router.on('/').renderInertia('home', {}).as('home')
 router.on('/about').renderInertia('about', {}).as('about')
-router.on('/programme').renderInertia('programme', {}).as('programme')
+router.get('/programme', [controllers.Programmes, 'publicIndex']).as('programme')
 router.on('/galerie').renderInertia('galerie/index', {}).as('galerie')
 router.get('/galerie/:slug', async ({ params, inertia }) => {
   return inertia.render('galerie/album', { slug: params.slug })
 }).as('galerie.show')
-router.get('/programme/:id', async ({ params, inertia }) => {
-  return inertia.render('programme_detail', { id: params.id })
-}).as('programme.show')
+router.get('/programme/:slug', [controllers.Programmes, 'publicShow']).as('programme.show')
 router.on('/calendrier').renderInertia('calendrier', {}).as('calendrier')
 router.on('/contact').renderInertia('contact', {}).as('contact')
 

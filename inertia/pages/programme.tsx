@@ -5,91 +5,49 @@ import { Clock, ArrowRight, BookOpen, HandHeart, Award, Heart, User, Landmark, S
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
-const categories = ['Tous', 'Fondements', 'Leadership', 'Ministère', 'Spécialisation']
+export interface Program {
+  id: number
+  name: string
+  slug: string
+  description: string
+  duration: string
+  coverImage: string | null
+  categoryId: number | null
+  category?: {
+    id: number
+    name: string
+  }
+}
 
-const programmes = [
-  {
-    id: 1,
-    titre: 'Essentielle de la doctrine chrétienne',
-    categorie: 'Fondements',
-    duree: '3 mois',
-    description: 'Une base solide dans la doctrine chrétienne, incluant l\'essentiel de la foi, la repentance et le baptême pour tout nouveau disciple.',
-    image: 'https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?q=80&w=800&auto=format&fit=crop',
-    icon: <BookOpen className="w-6 h-6" strokeWidth={1.5} />,
-  },
-  {
-    id: 2,
-    titre: 'Face à moi-même',
-    categorie: 'Ministère',
-    duree: '6 mois',
-    description: 'Un parcours d\'introspection pour laisser le Saint-Esprit transformer le caractère et l\'intelligence.',
-    image: 'https://images.unsplash.com/photo-1544928147-79a2dbc1f389?q=80&w=800&auto=format&fit=crop',
-    icon: <HandHeart className="w-6 h-6" strokeWidth={1.5} />,
-  },
-  {
-    id: 3,
-    titre: 'École des Ouvriers',
-    categorie: 'Ministère',
-    duree: '6 mois',
-    description: 'Formation intensive pour ceux appelés à servir dans les départements de l\'église locale. Focus sur l\'humilité (Doulos) et l\'excellence.',
-    image: 'https://images.unsplash.com/photo-1544928147-79a2dbc1f389?q=80&w=800&auto=format&fit=crop',
-    icon: <HandHeart className="w-6 h-6" strokeWidth={1.5} />,
-  },
-  {
-    id: 4,
-    titre: 'Leadership Biblique',
-    categorie: 'Leadership',
-    duree: '9 mois',
-    description: 'Développer le caractère d\'un Christ-leader. Destiné aux diacres, anciens et responsables de cellules ou de départements.',
-    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop',
-    icon: <Award className="w-6 h-6" strokeWidth={1.5} />,
-  },
-  {
-    id: 5,
-    titre: 'École des Dons',
-    categorie: 'Spécialisation',
-    duree: '1 mois',
-    description: 'Une immersion dans le ministère de la prière, le jeûne biblique et le combat spirituel pour soutenir l\'œuvre de Dieu.',
-    image: 'https://images.unsplash.com/photo-1445427845353-8b776a3e20e8?q=80&w=800&auto=format&fit=crop',
-    icon: <Heart className="w-6 h-6" strokeWidth={1.5} />,
-  },
-  {
-    id: 6,
-    titre: 'L\'Art de la Prière',
-    categorie: 'Fondements',
-    duree: '2 semaines',
-    description: 'Une immersion dans la vie de prière efficace pour des ouvriers fidèles et puissants.',
-    image: 'https://images.unsplash.com/photo-1522881113591-b65be79dce57?q=80&w=800&auto=format&fit=crop',
-    icon: <User className="w-6 h-6" strokeWidth={1.5} />,
-  },
-  {
-    id: 7,
-    titre: 'Gouvernance de l\'Église',
-    categorie: 'Leadership',
-    duree: '6 mois',
-    description: 'Principes d\'administration, éthique pastorale et gestion des ressources selon les directives apostoliques et bibliques.',
-    image: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800&auto=format&fit=crop',
-    icon: <Landmark className="w-6 h-6" strokeWidth={1.5} />,
-  },
-  {
-    id: 8,
-    titre: 'Doulos',
-    categorie: 'Service',
-    duree: '1 mois',
-    description: 'Apprendre le service, l\'humilité et l\'obéissance à l\'image de Christ, le serviteur par excellence.',
-    image: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800&auto=format&fit=crop',
-    icon: <Landmark className="w-6 h-6" strokeWidth={1.5} />,
-  },
-]
+export interface Category {
+  id: number
+  name: string
+}
 
-// ── Component ─────────────────────────────────────────────────────────────────
+export interface Props {
+  programs: Program[]
+  categories: Category[]
+}
 
-export default function Programmes() {
+// Icon mapping helper
+const getProgramIcon = (title: string) => {
+  const t = title.toLowerCase()
+  if (t.includes('doctrine') || t.includes('bible')) return <BookOpen className="w-6 h-6" strokeWidth={1.5} />
+  if (t.includes('face') || t.includes('moi')) return <HandHeart className="w-6 h-6" strokeWidth={1.5} />
+  if (t.includes('leadership')) return <Award className="w-6 h-6" strokeWidth={1.5} />
+  if (t.includes('prière')) return <Heart className="w-6 h-6" strokeWidth={1.5} />
+  if (t.includes('gouvernance')) return <Landmark className="w-6 h-6" strokeWidth={1.5} />
+  return <BookOpen className="w-6 h-6" strokeWidth={1.5} />
+}
+
+export default function Programmes({ programs, categories }: Props) {
   const [activeCategory, setActiveCategory] = useState('Tous')
 
+  const categoryNames = ['Tous', ...categories.map(c => c.name)]
+
   const filteredProgrammes = activeCategory === 'Tous' 
-    ? programmes 
-    : programmes.filter(p => p.categorie === activeCategory)
+    ? programs 
+    : programs.filter(p => p.category?.name === activeCategory)
 
   return (
     <Layout title="Programmes — ACADIS | Académie des Disciples">
@@ -124,7 +82,7 @@ export default function Programmes() {
           
           {/* Menu de filtres */}
           <div className="flex flex-wrap justify-center gap-3 mb-16">
-            {categories.map((cat) => (
+            {categoryNames.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -156,20 +114,26 @@ export default function Programmes() {
                   className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col h-full"
                 >
                   {/* Image Card */}
-                  <div className="h-48 relative overflow-hidden">
+                  <div className="h-48 relative overflow-hidden bg-gray-100">
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
-                    <img 
-                      src={prog.image} 
-                      alt={prog.titre} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
+                    {prog.coverImage ? (
+                      <img 
+                        src={prog.coverImage} 
+                        alt={prog.name} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-orange/5 text-orange/20">
+                        <BookOpen className="w-16 h-16" />
+                      </div>
+                    )}
                     <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 items-end">
                       <span className="bg-white/90 backdrop-blur-sm text-black text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm">
-                        {prog.categorie}
+                        {prog.category?.name || 'Général'}
                       </span>
                       <span className="bg-black/80 backdrop-blur-sm text-orange text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
-                        {prog.duree}
+                        {prog.duration}
                       </span>
                     </div>
                   </div>
@@ -178,21 +142,21 @@ export default function Programmes() {
                   <div className="p-6 flex flex-col flex-grow">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 bg-orange/10 text-orange flex items-center justify-center rounded-lg text-xl flex-shrink-0">
-                        {prog.icon}
+                        {getProgramIcon(prog.name)}
                       </div>
                       <h3 className="text-xl font-bold text-black leading-tight group-hover:text-orange transition-colors">
-                        {prog.titre}
+                        {prog.name}
                       </h3>
                     </div>
 
-                    <p className="text-gray-500 text-sm leading-relaxed mb-8 flex-grow">
+                    <p className="text-gray-500 text-sm leading-relaxed mb-8 flex-grow line-clamp-3">
                       {prog.description}
                     </p>
 
                     {/* Bonton d'action au fond */}
                     <div className="mt-auto pt-4 border-t border-gray-100">
                       <Link 
-                        href={`/programme/${prog.id}`} 
+                        href={`/programme/${prog.slug}`} 
                         className="flex items-center justify-between text-orange font-bold text-sm hover:text-orange-600 transition-colors group/btn"
                       >
                         Voir les détails du programme
