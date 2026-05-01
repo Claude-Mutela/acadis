@@ -42,6 +42,7 @@ export default class PaymentsController {
         methode: p.paymentType === 'cash' ? 'Cash' : p.paymentType === 'mobile_money' ? 'Mobile Money' : 'Card',
         statut: p.status === 'completed' ? 'Solde' : 'Acompte',
         date: p.createdAt?.toFormat('dd LLL yyyy') || '',
+        isoDate: p.createdAt?.toISODate() || '',
         time: p.createdAt?.toFormat('HH:mm') || '',
         userId: p.userId,
         manuelId: mp?.manuelId || 0,

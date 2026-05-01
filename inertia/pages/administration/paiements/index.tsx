@@ -15,6 +15,7 @@ type Paiement = {
   methode: string
   statut: string
   date: string
+  isoDate: string
   time: string
   userId: number
   manuelId: number
@@ -77,6 +78,12 @@ export default function PaiementsIndex({
 
   // État pour l'impression
   const [printingPayment, setPrintingPayment] = useState<Paiement | null>(null)
+  
+  // États pour le rapport global
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [reportType, setReportType] = useState<'all' | 'monthly' | 'weekly' | 'custom'>('all')
+  const [customRange, setCustomRange] = useState({ start: '', end: '' })
+  const [reportPayments, setReportPayments] = useState<Paiement[]>([])
 
   // ── Statistiques ─────────────────────────────────────────────────────────────
   const totalEncaissé = payments.reduce((acc, curr) => acc + curr.montant, 0)
@@ -177,6 +184,43 @@ export default function PaiementsIndex({
     }, 500)
   }
 
+  const handlePrintReport = () => {
+    let filtered = [...payments]
+    const now = new Date()
+
+    if (reportType === 'monthly') {
+      const month = now.getMonth()
+      const year = now.getFullYear()
+      filtered = payments.filter(p => {
+        const d = new Date(p.isoDate)
+        return d.getMonth() === month && d.getFullYear() === year
+      })
+    } else if (reportType === 'weekly') {
+      const lastWeek = new Date()
+      lastWeek.setDate(now.getDate() - 7)
+      filtered = payments.filter(p => {
+        const d = new Date(p.isoDate)
+        return d >= lastWeek && d <= now
+      })
+    } else if (reportType === 'custom' && customRange.start && customRange.end) {
+      const start = new Date(customRange.start)
+      const end = new Date(customRange.end)
+      end.setHours(23, 59, 59, 999) // Inclure toute la journée de fin
+      filtered = payments.filter(p => {
+        const d = new Date(p.isoDate)
+        return d >= start && d <= end
+      })
+    }
+
+    setReportPayments(filtered)
+    setIsReportModalOpen(false)
+    
+    setTimeout(() => {
+      window.print()
+      setReportPayments([])
+    }, 500)
+  }
+
   const confirmDelete = () => {
     if (currentPayment) {
       router.delete(`/administration/paiements/${currentPayment.id}`, {
@@ -214,7 +258,7 @@ export default function PaiementsIndex({
             className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
           >
             <option value="Tous">Statut</option>
-            <option value="Complet">Complet</option>
+            <option value="Solde">Solde</option>
             <option value="Acompte">Acompte</option>
           </select>
         </div>
@@ -244,13 +288,22 @@ export default function PaiementsIndex({
           </select>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5 ml-auto"
-        >
-          <Plus className="w-5 h-5" />
-          Encaisser un paiement
-        </button>
+        <div className="flex items-center gap-2 ml-auto w-full md:w-auto">
+          <button
+            onClick={() => setIsReportModalOpen(true)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-bold py-2.5 px-5 rounded-xl text-sm border border-gray-200 shadow-sm transition-all hover:-translate-y-0.5"
+          >
+            <Printer className="w-5 h-5 text-gray-400" />
+            Rapports
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-5 h-5" />
+            Encaisser
+          </button>
+        </div>
       </div>
 
       {/* Cartes de Statistiques */}
@@ -335,10 +388,10 @@ export default function PaiementsIndex({
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold ${payment.statut === 'Complet' ? 'bg-green-100 text-green-700 border border-green-200' :
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold ${payment.statut === 'Solde' ? 'bg-green-100 text-green-700 border border-green-200' :
                         'bg-orange/20 text-orange border border-orange/20'
                         }`}>
-                        {payment.statut === 'Complet' ? <CheckCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                        {payment.statut === 'Solde' ? <CheckCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                         {payment.statut}
                       </span>
                     </td>
@@ -522,6 +575,74 @@ export default function PaiementsIndex({
         </div>
       )}
 
+      {/* Modal Impression Rapports */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsReportModalOpen(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in-up">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <Printer className="w-5 h-5 text-orange" />
+                Imprimer un rapport
+              </h3>
+              <button onClick={() => setIsReportModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-white p-1 rounded-full shadow-sm">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Période du rapport</label>
+                <select 
+                  value={reportType}
+                  onChange={(e) => setReportType(e.target.value as any)}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all"
+                >
+                  <option value="all">Tous les paiements</option>
+                  <option value="weekly">Derniers 7 jours (Hebdomadaire)</option>
+                  <option value="monthly">Mois en cours (Mensuel)</option>
+                  <option value="custom">Choisir une plage de dates...</option>
+                </select>
+              </div>
+
+              {reportType === 'custom' && (
+                <div className="grid grid-cols-2 gap-3 animate-fade-in">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Date début</label>
+                    <input 
+                      type="date"
+                      value={customRange.start}
+                      onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Date fin</label>
+                    <input 
+                      type="date"
+                      value={customRange.end}
+                      onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 flex gap-3 border-t border-gray-100">
+                <button onClick={() => setIsReportModalOpen(false)} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors">
+                  Annuler
+                </button>
+                <button 
+                  onClick={handlePrintReport}
+                  className="flex-1 py-3 bg-black hover:bg-gray-900 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-0.5"
+                >
+                  Imprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Suppression */}
       {isDeleteModalOpen && currentPayment && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -559,8 +680,8 @@ export default function PaiementsIndex({
             print-color-adjust: exact; 
           }
           body * { visibility: hidden; }
-          #printable-receipt, #printable-receipt * { visibility: visible; }
-          #printable-receipt { 
+          #printable-receipt, #printable-receipt *, #printable-report, #printable-report * { visibility: visible; }
+          #printable-receipt, #printable-report { 
             position: fixed; 
             left: 0; 
             top: 0; 
@@ -651,7 +772,7 @@ export default function PaiementsIndex({
           <div className="flex justify-between items-center px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
             <div className="text-sm">
               <span className="text-gray-500">Statut du paiement :</span>
-              <span className={`ml-2 font-black ${printingPayment.statut === 'Complet' ? 'text-green-600' : 'text-orange'}`}>
+              <span className={`ml-2 font-black ${printingPayment.statut === 'Solde' ? 'text-green-600' : 'text-orange'}`}>
                 {printingPayment.statut.toUpperCase()}
               </span>
             </div>
@@ -660,9 +781,77 @@ export default function PaiementsIndex({
             </div>
           </div>
 
-          <div className="mt-8 pt-4 border-t border-dashed border-gray-200 text-center text-xs text-gray-400">
-            <p>Merci pour votre confiance. Ce reçu est généré numériquement.</p>
-            <p className="mt-1">ACADIS - Former les disciples pour bâtir une église mature</p>
+          <div className="mt-20 pt-4 border-t border-dashed border-gray-200 text-center text-[10px] text-gray-400">
+            <p>ACADIS - Former les disciples pour bâtir une église mature</p>
+          </div>
+        </div>
+      )}
+
+      {/* Zone d'impression du rapport (cachée à l'écran) */}
+      {reportPayments.length > 0 && (
+        <div id="printable-report" className="hidden print:block p-8 bg-white text-black font-sans">
+          <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-6">
+            <div className="flex items-center gap-4">
+              <img src="/logo ACADIS.png" alt="Logo ACADIS" className="w-20 h-auto" />
+              <div>
+                <h1 className="text-3xl font-black text-black uppercase tracking-tighter">ACADIS</h1>
+                <p className="text-xs text-gray-500 font-black uppercase tracking-widest">Rapport d'encaissements Financiers</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-black text-black">RAPPORT FINANCIER</p>
+              <p className="text-sm font-bold text-gray-600 italic">
+                Période : {reportType === 'all' ? 'Toutes les transactions' : 
+                          reportType === 'monthly' ? 'Mois en cours' : 
+                          reportType === 'weekly' ? 'Derniers 7 jours' : 
+                          `Du ${customRange.start} au ${customRange.end}`}
+              </p>
+            </div>
+          </div>
+
+          <table className="w-full border-collapse border-2 border-black">
+            <thead>
+              <tr className="bg-gray-100 border-b-2 border-black">
+                <th className="px-3 py-2 text-left text-[10px] font-black uppercase border-r border-black">Date</th>
+                <th className="px-3 py-2 text-left text-[10px] font-black uppercase border-r border-black">Étudiant</th>
+                <th className="px-3 py-2 text-left text-[10px] font-black uppercase border-r border-black">Manuel / Achat</th>
+                <th className="px-3 py-2 text-left text-[10px] font-black uppercase border-r border-black">Mode</th>
+                <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Montant</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-300">
+              {reportPayments.map(p => (
+                <tr key={p.id} className="border-b border-gray-200">
+                  <td className="px-3 py-2 text-[11px] border-r border-black">{p.date}</td>
+                  <td className="px-3 py-2 text-[11px] border-r border-black font-bold">{p.etudiant}</td>
+                  <td className="px-3 py-2 text-[11px] border-r border-black">{p.manuel}</td>
+                  <td className="px-3 py-2 text-[11px] border-r border-black italic text-gray-600">{p.methode}</td>
+                  <td className="px-3 py-2 text-right text-[12px] font-black">${p.montant.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-100 border-t-2 border-black">
+                <td colSpan={4} className="px-3 py-4 text-right font-black uppercase text-base border-r border-black">Total Global Encaissé</td>
+                <td className="px-3 py-4 text-right text-2xl font-black bg-gray-200">
+                  ${reportPayments.reduce((acc, curr) => acc + curr.montant, 0).toFixed(2)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div className="mt-16 flex justify-between items-start gap-12">
+            <div className="flex-1 border-t border-black pt-4 text-center">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-12">Le Caissier / L'Agent</p>
+              <p className="font-black text-black uppercase">{props.user?.firstName} {props.user?.lastName}</p>
+            </div>
+            <div className="flex-1 border-t border-black pt-4 text-center">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Cachet & Signature Direction</p>
+            </div>
+          </div>
+
+          <div className="mt-auto pt-8 text-center text-[9px] text-gray-400">
+            <p>Document généré numériquement par le système ACADIS le {new Date().toLocaleString('fr-FR')}</p>
           </div>
         </div>
       )}
