@@ -27,7 +27,7 @@ router.on('/contact').renderInertia('contact', {}).as('contact')
 router
   .group(() => {
     // Dashboard
-    router.on('/administration/dashboard').renderInertia('administration/dashboard', {}).as('admin.dashboard')
+    router.get('/administration/dashboard', [controllers.Dashboard, 'index']).as('admin.dashboard')
     
     // Utilisateurs
     router.get('/administration/utilisateurs', [controllers.Users, 'index']).as('admin.users.index')

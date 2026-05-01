@@ -1,16 +1,34 @@
-import { Head } from '@inertiajs/react'
+import { Head, Link } from '@inertiajs/react'
 import AdminLayout from '../../components/administration/AdminLayout'
 import { Users, GraduationCap, BookOpen, CreditCard, ArrowUpRight } from 'lucide-react'
 
-// Dummy data
-const stats = [
-  { name: 'Total Étudiants', value: '248', icon: Users, change: '+12%', color: 'bg-blue-600', badge: 'bg-blue-50 text-blue-600' },
-  { name: 'Formateurs Actifs', value: '16', icon: GraduationCap, change: '+2', color: 'bg-indigo-600', badge: 'bg-indigo-50 text-indigo-600' },
-  { name: 'Programmes', value: '8', icon: BookOpen, change: 'Stable', color: 'bg-green-600', badge: 'bg-green-50 text-green-600' },
-  { name: 'Paiements du mois', value: '$4,250', icon: CreditCard, change: '+8%', color: 'bg-orange', badge: 'bg-orange/10 text-orange' },
-]
+interface Props {
+  stats: {
+    students: number
+    trainers: number
+    programs: number
+    revenue: number
+  }
+  recentStudents: Array<{
+    id: number
+    name: string
+    program: string
+    initials: string
+    date: string
+  }>
+  chartData: Array<{
+    name: string
+    total: number
+  }>
+}
 
-export default function Dashboard() {
+export default function Dashboard({ stats: serverStats, recentStudents, chartData }: Props) {
+  const stats = [
+    { name: 'Total Étudiants', value: serverStats.students.toString(), icon: Users, change: 'Actifs', color: 'bg-blue-600', badge: 'bg-blue-50 text-blue-600' },
+    { name: 'Formateurs Actifs', value: serverStats.trainers.toString(), icon: GraduationCap, change: 'Staff', color: 'bg-indigo-600', badge: 'bg-indigo-50 text-indigo-600' },
+    { name: 'Programmes', value: serverStats.programs.toString(), icon: BookOpen, change: 'Catalogue', color: 'bg-green-600', badge: 'bg-green-50 text-green-600' },
+    { name: 'Paiements du mois', value: `$${serverStats.revenue.toLocaleString()}`, icon: CreditCard, change: 'Encaissé', color: 'bg-orange', badge: 'bg-orange/10 text-orange' },
+  ]
   return (
     <AdminLayout title="Dashboard" description="Gérez l'académie depuis cet espace centralisé.">
       <Head title="Dashboard — Admin ACADIS" />
@@ -57,24 +75,27 @@ export default function Dashboard() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-bold text-gray-900 mb-6">Derniers Inscrits</h3>
           <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-4 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
-                <div className="w-10 h-10 rounded-full bg-orange/10 text-orange flex items-center justify-center font-bold shadow-sm">
-                  A{i}
+            {recentStudents.map((student) => (
+              <div key={student.id} className="flex items-center gap-4 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
+                <div className="w-10 h-10 rounded-full bg-orange/10 text-orange flex items-center justify-center font-bold shadow-sm uppercase">
+                  {student.initials}
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <p className="text-sm font-bold text-gray-900 truncate">Alexi Ntambwe {i}</p>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">Parcours Fondamental</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{student.name}</p>
+                  <p className="text-xs text-gray-500 truncate mt-0.5">{student.program}</p>
                 </div>
-                <span className="text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
-                  Auj
+                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md whitespace-nowrap">
+                  {student.date}
                 </span>
               </div>
             ))}
           </div>
-          <button className="w-full mt-6 py-2.5 text-sm font-bold text-orange bg-orange/10 hover:bg-orange hover:text-white rounded-xl transition-colors">
+          <Link 
+            href="/administration/etudiants"
+            className="w-full mt-6 py-2.5 text-sm font-bold text-orange bg-orange/10 hover:bg-orange hover:text-white rounded-xl transition-colors inline-block text-center"
+          >
             Voir tous les étudiants
-          </button>
+          </Link>
         </div>
       </div>
     </AdminLayout>
