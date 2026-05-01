@@ -4,10 +4,12 @@ import User from '#models/user'
 import Manuel from '#models/manuel'
 import ManualPurchase from '#models/manual_purchase'
 import PaymentHistory from '#models/payment_history'
+import Invoice from '#models/invoice'
 import Program from '#models/program'
 import Vacation from '#models/vacation'
 import Cohort from '#models/cohort'
 import db from '@adonisjs/lucid/services/db'
+import { DateTime } from 'luxon'
 
 export default class PaymentsController {
   async index({ inertia }: HttpContext) {
@@ -35,10 +37,12 @@ export default class PaymentsController {
         id: p.id,
         etudiant: p.user?.fullName || 'Inconnu',
         manuel: mp?.manuel?.title || 'N/A',
+        manuelPrice: Number(mp?.manuel?.price || 0),
         montant: Number(p.amount),
         methode: p.paymentType === 'cash' ? 'Cash' : p.paymentType === 'mobile_money' ? 'Mobile Money' : 'Card',
-        statut: p.status === 'completed' ? 'Complet' : 'Acompte',
+        statut: p.status === 'completed' ? 'Solde' : 'Acompte',
         date: p.createdAt?.toFormat('dd LLL yyyy') || '',
+        time: p.createdAt?.toFormat('HH:mm') || '',
         userId: p.userId,
         manuelId: mp?.manuelId || 0,
         programId: Number(programId),
@@ -109,6 +113,14 @@ export default class PaymentsController {
       history.actionType = 'CREATE'
       history.useTransaction(trx)
       await history.save()
+
+      // Create Invoice
+      const invoice = new Invoice()
+      invoice.paymentId = payment.id
+      invoice.totalAmount = montant
+      invoice.issueDate = DateTime.now()
+      invoice.useTransaction(trx)
+      await invoice.save()
     })
 
     session.flash('success', 'Paiement enregistré avec succès.')
@@ -153,6 +165,13 @@ export default class PaymentsController {
         history.actionType = 'UPDATE'
         history.useTransaction(trx)
         await history.save()
+
+        // Sync Invoice
+        const invoice = await Invoice.query().where('paymentId', payment.id).useTransaction(trx).first()
+        if (invoice) {
+            invoice.totalAmount = montant
+            await invoice.save()
+        }
     })
 
     session.flash('success', 'Paiement mis à jour avec succès.')

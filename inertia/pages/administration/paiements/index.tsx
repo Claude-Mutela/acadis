@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
-import { Head, router, useForm } from '@inertiajs/react'
+import { Head, router, useForm, usePage } from '@inertiajs/react'
 import AdminLayout from '../../../components/administration/AdminLayout'
-import { 
-  Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X, 
+import {
+  Search, Filter, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, X,
   DollarSign, Book, Smartphone, Banknote, Printer, CheckCircle, Clock, ChevronDown, CreditCard
 } from 'lucide-react'
 
@@ -10,10 +10,12 @@ type Paiement = {
   id: number
   etudiant: string
   manuel: string
+  manuelPrice: number
   montant: number
   methode: string
   statut: string
   date: string
+  time: string
   userId: number
   manuelId: number
   programId: number
@@ -41,23 +43,24 @@ interface Props {
   cohortsList: { id: number; title: string }[]
 }
 
-export default function PaiementsIndex({ 
-  initialPayments, studentsList, manuelsList, 
-  vacationsList, cohortsList 
+export default function PaiementsIndex({
+  initialPayments, studentsList, manuelsList,
+  vacationsList, cohortsList
 }: Props) {
+  const { props } = usePage<any>()
   const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
     userId: 0,
     manuelId: manuelsList[0]?.id || 0,
     montant: 0,
   })
   const payments = initialPayments
-  
+
   // États de recherche et filtre
   const [search, setSearch] = useState('')
   const [filterStatut, setFilterStatut] = useState('Tous')
   const [filterVacation, setFilterVacation] = useState('0')
   const [filterCohort, setFilterCohort] = useState('0')
-  
+
   // États de pagination
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 7
@@ -67,10 +70,13 @@ export default function PaiementsIndex({
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [currentPayment, setCurrentPayment] = useState<Paiement | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  
+
   // États pour le Combobox Étudiant
   const [studentSearch, setStudentSearch] = useState('')
   const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false)
+
+  // État pour l'impression
+  const [printingPayment, setPrintingPayment] = useState<Paiement | null>(null)
 
   // ── Statistiques ─────────────────────────────────────────────────────────────
   const totalEncaissé = payments.reduce((acc, curr) => acc + curr.montant, 0)
@@ -82,21 +88,21 @@ export default function PaiementsIndex({
   // ── Logique Métier (Filtrage & Pagination) ──────────────────────────────────
   const filteredPayments = useMemo(() => {
     return payments.filter(payment => {
-      const matchSearch = 
-        payment.etudiant.toLowerCase().includes(search.toLowerCase()) || 
+      const matchSearch =
+        payment.etudiant.toLowerCase().includes(search.toLowerCase()) ||
         payment.manuel.toLowerCase().includes(search.toLowerCase()) ||
         payment.id.toString().includes(search)
-      
+
       const matchStatut = filterStatut === 'Tous' || payment.statut === filterStatut
       const matchVacation = filterVacation === '0' || payment.vacationId === parseInt(filterVacation)
       const matchCohort = filterCohort === '0' || payment.cohortId === parseInt(filterCohort)
-      
+
       return matchSearch && matchStatut && matchVacation && matchCohort
     })
   }, [payments, search, filterStatut, filterVacation, filterCohort])
 
   const totalPages = Math.ceil(filteredPayments.length / itemsPerPage)
-  
+
   const paginatedPayments = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     return filteredPayments.slice(startIndex, startIndex + itemsPerPage)
@@ -108,7 +114,7 @@ export default function PaiementsIndex({
   }
 
   const filteredStudentsForDropdown = useMemo(() => {
-    return studentsList.filter(s => 
+    return studentsList.filter(s =>
       `${s.prenom} ${s.nom}`.toLowerCase().includes(studentSearch.toLowerCase())
     )
   }, [studentSearch, studentsList])
@@ -146,7 +152,7 @@ export default function PaiementsIndex({
 
   const handleSavePayment = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (selectedManuel && data.montant > selectedManuel.price) {
       // Inline validation if needed, but we also have server-side
       return
@@ -161,6 +167,14 @@ export default function PaiementsIndex({
         onSuccess: () => setIsModalOpen(false),
       })
     }
+  }
+
+  const handlePrint = (payment: Paiement) => {
+    setPrintingPayment(payment)
+    setTimeout(() => {
+      window.print()
+      setPrintingPayment(null)
+    }, 500)
   }
 
   const confirmDelete = () => {
@@ -178,7 +192,7 @@ export default function PaiementsIndex({
   return (
     <AdminLayout title="Paiements" description="Caisse et suivi des ventes de manuels pour les étudiants.">
       <Head title="Paiements — Admin ACADIS" />
-      
+
       {/* Actions Rapides (Recherche, Filtre, Ajout) */}
       <div className="flex flex-col md:flex-row items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex-[3] relative w-full md:min-w-[400px]">
@@ -191,7 +205,7 @@ export default function PaiementsIndex({
             className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm transition-colors"
           />
         </div>
-        
+
         <div className="w-full md:w-48 relative">
           <Filter className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <select
@@ -230,7 +244,7 @@ export default function PaiementsIndex({
           </select>
         </div>
 
-        <button 
+        <button
           onClick={openCreateModal}
           className="w-full md:w-auto flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md shadow-orange/20 transition-all hover:-translate-y-0.5 ml-auto"
         >
@@ -314,37 +328,37 @@ export default function PaiementsIndex({
                     <td className="px-6 py-4">
                       <div className="font-black text-gray-900">${payment.montant.toFixed(2)}</div>
                       <div className="text-xs text-gray-500 font-medium flex items-center gap-1 mt-0.5">
-                        {payment.methode === 'Mobile Money' ? <Smartphone className="w-3 h-3" /> : 
-                         payment.methode === 'Card' ? <CreditCard className="w-3 h-3" /> : 
-                         <Banknote className="w-3 h-3" />}
+                        {payment.methode === 'Mobile Money' ? <Smartphone className="w-3 h-3" /> :
+                          payment.methode === 'Card' ? <CreditCard className="w-3 h-3" /> :
+                            <Banknote className="w-3 h-3" />}
                         {payment.methode}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold ${
-                        payment.statut === 'Complet' ? 'bg-green-100 text-green-700 border border-green-200' :
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold ${payment.statut === 'Complet' ? 'bg-green-100 text-green-700 border border-green-200' :
                         'bg-orange/20 text-orange border border-orange/20'
-                      }`}>
+                        }`}>
                         {payment.statut === 'Complet' ? <CheckCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                         {payment.statut}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
+                        <button
+                          onClick={() => handlePrint(payment)}
                           className="p-1.5 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded-lg transition-colors"
                           title="Imprimer Reçu"
                         >
                           <Printer className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => openEditModal(payment)}
                           className="p-1.5 bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 rounded-lg transition-colors"
                           title="Modifier"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeletePrompt(payment)}
                           className="p-1.5 bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors"
                           title="Supprimer"
@@ -373,31 +387,30 @@ export default function PaiementsIndex({
               Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, filteredPayments.length)} sur {filteredPayments.length} transactions
             </span>
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => p - 1)}
                 className="p-1.5 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               <div className="flex items-center gap-1 font-medium text-sm">
                 {[...Array(totalPages)].map((_, i) => (
-                  <button 
+                  <button
                     key={i}
                     onClick={() => setCurrentPage(i + 1)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                      currentPage === i + 1 
-                        ? 'bg-black text-white' 
-                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${currentPage === i + 1
+                      ? 'bg-black text-white'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
                   >
                     {i + 1}
                   </button>
                 ))}
               </div>
 
-              <button 
+              <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(p => p + 1)}
                 className="p-1.5 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -414,7 +427,7 @@ export default function PaiementsIndex({
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
           <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
-            
+
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-orange" />
@@ -426,13 +439,13 @@ export default function PaiementsIndex({
             </div>
 
             <form onSubmit={handleSavePayment} className="p-6 space-y-5 overflow-visible">
-              
+
               <div className="relative z-50">
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">Nom de l'étudiant</label>
                 <div className="relative">
-                  <input 
+                  <input
                     type="text" required placeholder="Rechercher et sélectionner un étudiant..."
-                    value={studentSearch} 
+                    value={studentSearch}
                     onChange={e => {
                       setStudentSearch(e.target.value)
                       setIsStudentDropdownOpen(true)
@@ -442,13 +455,13 @@ export default function PaiementsIndex({
                     className={`w-full px-4 py-2.5 bg-gray-50 border ${errors.userId ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all pr-10`}
                   />
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  
+
                   {isStudentDropdownOpen && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50 py-1">
                       {filteredStudentsForDropdown.length > 0 ? (
                         filteredStudentsForDropdown.map(s => (
-                          <div 
-                            key={s.id} 
+                          <div
+                            key={s.id}
                             className="px-4 py-2.5 hover:bg-orange/10 cursor-pointer text-sm font-medium text-gray-700 hover:text-orange transition-colors"
                             onMouseDown={() => {
                               const fullName = `${s.prenom} ${s.nom}`
@@ -471,8 +484,8 @@ export default function PaiementsIndex({
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">Manuel Vendu</label>
-                <select 
-                  value={data.manuelId} 
+                <select
+                  value={data.manuelId}
                   onChange={e => setData('manuelId', parseInt(e.target.value))}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
                 >
@@ -484,9 +497,9 @@ export default function PaiementsIndex({
 
               <div className="relative z-0">
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">Montant ($)</label>
-                <input 
+                <input
                   type="number" required min="1" step="any"
-                  value={data.montant} 
+                  value={data.montant}
                   onChange={e => setData('montant', parseFloat(e.target.value))}
                   className={`w-full px-4 py-2.5 bg-gray-50 border ${errors.montant || (selectedManuel && data.montant > selectedManuel.price) ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none transition-all font-bold`}
                 />
@@ -533,6 +546,126 @@ export default function PaiementsIndex({
         </div>
       )}
 
+      {/* Zone d'impression (cachée à l'écran) */}
+      <style>{`
+        @media print {
+          @page { 
+            margin: 0; 
+            size: portrait;
+          }
+          body { 
+            margin: 0;
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+          }
+          body * { visibility: hidden; }
+          #printable-receipt, #printable-receipt * { visibility: visible; }
+          #printable-receipt { 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100vh;
+            padding: 20mm;
+            background: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+          .no-print { display: none !important; }
+        }
+      `}</style>
+
+      {printingPayment && (
+        <div id="printable-receipt" className="hidden print:block p-4 bg-white text-black font-sans">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <div className="mb-4">
+                <img src="/logo ACADIS.png" alt="Logo ACADIS" className="w-24 h-auto" />
+              </div>
+              <p className="text-xl font-bold text-gray-900">Reçu de Paiement Officiel</p>
+            </div>
+            <div className="text-right">
+              <div className="font-bold">N° Reçu: #{printingPayment.id}</div>
+              <div className="text-sm text-gray-500">{printingPayment.date} à {printingPayment.time}</div>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-end mb-4 border-b border-gray-100 pb-4">
+              <div>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Étudiant</h4>
+                <p className="text-lg font-bold">{printingPayment.etudiant}</p>
+                <div className="flex gap-4 text-sm text-gray-600">
+                  <span>Programme: {cohortsList.find(c => c.id === printingPayment.cohortId)?.title || 'Inconnu'}</span>
+                  <span>Vacation: {vacationsList.find(v => v.id === printingPayment.vacationId)?.title || 'Inconnue'}</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-gray-400 italic">
+                  Imprimé le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+                <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">
+                  Par : {props.user ? `${props.user.firstName} ${props.user.lastName}` : 'Administrateur'}
+                </p>
+              </div>
+            </div>
+
+            <table className="w-full border-collapse border-2 border-gray-500 shadow-sm">
+              <thead>
+                <tr className="bg-gray-500 text-white border-b-2 border-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Désignation</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">Prix Unitaire</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">Quantité</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                <tr>
+                  <td className="px-4 py-4">
+                    <div className="font-bold text-gray-900">{printingPayment.manuel}</div>
+                    <div className="text-xs text-gray-500 italic">Manuel de cours ACADIS</div>
+                  </td>
+                  <td className="px-4 py-4 text-right font-medium">${printingPayment.manuelPrice.toFixed(2)}</td>
+                  <td className="px-4 py-4 text-right font-medium">1</td>
+                  <td className="px-4 py-4 text-right font-black">${printingPayment.manuelPrice.toFixed(2)}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-50/80">
+                  <td colSpan={3} className="px-4 py-3 text-right text-sm font-bold text-gray-600">Sous-total</td>
+                  <td className="px-4 py-3 text-right font-bold text-gray-900">${printingPayment.manuelPrice.toFixed(2)}</td>
+                </tr>
+                <tr className="bg-green-50/50">
+                  <td colSpan={3} className="px-4 py-3 text-right text-sm font-bold text-green-700">Montant Versé ({printingPayment.methode})</td>
+                  <td className="px-4 py-3 text-right font-black text-green-700">-${printingPayment.montant.toFixed(2)}</td>
+                </tr>
+                <tr className="bg-gray-500 text-white border-t-2 border-gray-500">
+                  <td colSpan={3} className="px-4 py-4 text-right text-base font-black uppercase">Reste à payer</td>
+                  <td className="px-4 py-4 text-right text-xl font-black">${(printingPayment.manuelPrice - printingPayment.montant).toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div className="flex justify-between items-center px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="text-sm">
+              <span className="text-gray-500">Statut du paiement :</span>
+              <span className={`ml-2 font-black ${printingPayment.statut === 'Complet' ? 'text-green-600' : 'text-orange'}`}>
+                {printingPayment.statut.toUpperCase()}
+              </span>
+            </div>
+            <div className="text-xs text-gray-400 italic">
+              Mode : {printingPayment.methode}
+            </div>
+          </div>
+
+          <div className="mt-8 pt-4 border-t border-dashed border-gray-200 text-center text-xs text-gray-400">
+            <p>Merci pour votre confiance. Ce reçu est généré numériquement.</p>
+            <p className="mt-1">ACADIS - Former les disciples pour bâtir une église mature</p>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }
