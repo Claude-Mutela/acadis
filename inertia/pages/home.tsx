@@ -117,11 +117,37 @@ const pointsCles = [
 ]
 
 // ── Component ─────────────────────────────────────────────────────────────────
+interface Vacation {
+  id: number
+  name: string | null
+  day: string
+  startTime: string
+  endTime: string
+}
 
-export default function Home() {
+interface Props {
+  vacations: Vacation[]
+  hasActivePrograms: boolean
+}
+
+export default function Home({ vacations, hasActivePrograms }: Props) {
   const { props } = usePage()
   const user = props.user as any
   const carouselRef = useRef<HTMLDivElement>(null)
+
+  // Grouping vacations by day to show unique days if needed, 
+  // but the image shows them as individual blocks.
+  // We'll group by "Day + Name" or just use them as they are but grouped by unique day.
+  // Actually, the user asked for "manière uniques en terme de jour" 
+  // and "le jour avec toutes les heures disponibles de chaque jour".
+  
+  const uniqueDays = Array.from(new Set(vacations.map(v => v.day)))
+  const groupedByDay = uniqueDays.map(day => {
+    return {
+      day,
+      slots: vacations.filter(v => v.day === day)
+    }
+  })
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -149,7 +175,7 @@ export default function Home() {
       {/* ════════════════════════════════════════════════════════
           1. HERO SECTION
       ════════════════════════════════════════════════════════ */}
-      <section className="relative bg-black text-white overflow-hidden min-h-[90vh] flex items-center">
+      <section className="relative bg-black text-white overflow-hidden min-h-[85vh] flex items-start">
         {/* Background pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
@@ -162,7 +188,7 @@ export default function Home() {
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-20 bg-gradient-to-bl from-orange via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange rounded-full opacity-10 blur-3xl" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 w-full">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-20 pb-20 lg:pb-28 w-full">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Text */}
             <div className="animate-fade-in-up">
@@ -198,43 +224,66 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Illustration card */}
-            <div className="hidden lg:block relative">
-              <div className="relative z-10 bg-gray-900 border border-gray-700/50 rounded-2xl p-8 shadow-2xl backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <img src="/logo ACADIS.png" alt="Logo ACADIS" className="w-full h-full object-contain brightness-0 invert" />
+            {/* Right: Illustration card (Dynamic Vacations) */}
+            {hasActivePrograms && vacations.length > 0 && (
+              <div className="hidden lg:block relative">
+                <div className="relative z-10 bg-gray-900 border border-gray-700/50 rounded-[2rem] p-10 shadow-2xl backdrop-blur-md">
+                  <div className="flex items-center gap-4 mb-10">
+                    <div className="w-14 h-14 flex items-center justify-center bg-white/5 rounded-2xl p-2 border border-white/10">
+                      <img src="/logo ACADIS.png" alt="Logo ACADIS" className="w-full h-full object-contain brightness-0 invert" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-black text-xl tracking-tight">Nos Vacations</h3>
+                      <p className="text-gray-400 text-sm font-medium">Choisissez votre horaire</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-white font-bold text-lg">Nos Vacations</h3>
-                    <p className="text-gray-400 text-sm">Choisissez votre horaire</p>
+
+                  <div className="space-y-5">
+                    {groupedByDay.map(({ day, slots }) => (
+                      <div 
+                        key={day} 
+                        className={`p-6 rounded-2xl border transition-all duration-300 ${
+                          day.toLowerCase().includes('samedi') || day.toLowerCase().includes('dimanche')
+                            ? 'bg-orange/10 border-orange/20 hover:bg-orange/20' 
+                            : 'bg-white/5 border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <p className="text-orange font-black text-xs uppercase tracking-[0.2em]">{day}</p>
+                          <div className="h-px flex-1 bg-gradient-to-r from-orange/20 to-transparent ml-4"></div>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-x-8 gap-y-4">
+                          {slots.map(slot => (
+                            <div key={slot.id} className="flex items-center gap-3 group/slot">
+                              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover/slot:bg-orange/20 transition-all">
+                                <Clock className="w-4 h-4 text-gray-600 group-hover/slot:text-orange transition-colors" />
+                              </div>
+                              <div className="flex flex-col">
+                                <p className="text-white font-bold text-lg tracking-tight leading-none">
+                                  {slot.startTime.slice(0, 5).replace(':', 'H')} 
+                                  <span className="mx-1.5 text-gray-500 font-normal text-sm">à</span> 
+                                  {slot.endTime.slice(0, 5).replace(':', 'H')}
+                                </p>
+                                {slot.name && (
+                                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mt-1 group-hover/slot:text-orange/80 transition-colors">
+                                    {slot.name}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
-                    <p className="text-orange font-bold text-sm mb-1 uppercase tracking-widest">Matin</p>
-                    <p className="text-white font-medium">8H00 à 10H00</p>
-                  </div>
-                  <div className="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
-                    <p className="text-orange font-bold text-sm mb-1 uppercase tracking-widest">Midi</p>
-                    <p className="text-white font-medium">12H00 à 14H00</p>
-                  </div>
-                  <div className="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
-                    <p className="text-orange font-bold text-sm mb-1 uppercase tracking-widest">Soir</p>
-                    <p className="text-white font-medium">17H00 à 19H00</p>
-                  </div>
-                  <div className="bg-orange/10 p-4 rounded-xl border border-orange/30">
-                    <p className="text-orange font-bold text-sm mb-1 uppercase tracking-widest">Samedi (Intensive)</p>
-                    <p className="text-white font-medium">8H00 à 14H00</p>
-                  </div>
-                </div>
+                {/* Decorative elements */}
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange/20 rounded-full blur-2xl z-0" />
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl z-0" />
               </div>
-
-              {/* Decorative elements */}
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange/20 rounded-full blur-2xl z-0" />
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl z-0" />
-            </div>
+            )}
           </div>
         </div>
 

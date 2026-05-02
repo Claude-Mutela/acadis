@@ -11,7 +11,7 @@ import { middleware } from '#start/kernel'
 import { controllers } from '#generated/controllers'
 import router from '@adonisjs/core/services/router'
 
-router.on('/').renderInertia('home', {}).as('home')
+router.get('/', [controllers.Programmes, 'home']).as('home')
 router.on('/about').renderInertia('about', {}).as('about')
 router.get('/programme', [controllers.Programmes, 'publicIndex']).as('programme')
 router.on('/galerie').renderInertia('galerie/index', {}).as('galerie')

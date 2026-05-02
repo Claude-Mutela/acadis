@@ -3,12 +3,23 @@ import Program from '#models/program'
 import ProgramCategory from '#models/program_category'
 import Trainer from '#models/trainer'
 import Cohort from '#models/cohort'
+import Vacation from '#models/vacation'
 import { createProgramValidator, updateProgramValidator } from '#validators/program'
 import app from '@adonisjs/core/services/app'
 import string from '@adonisjs/core/helpers/string'
 import fs from 'node:fs'
 
 export default class ProgrammesController {
+  async home({ inertia }: HttpContext) {
+    const hasActivePrograms = await Program.query().where('status', 'active').first()
+    const vacations = await Vacation.query().preload('programs').orderBy('day', 'asc').orderBy('startTime', 'asc')
+
+    return (inertia as any).render('home', {
+      hasActivePrograms: !!hasActivePrograms,
+      vacations: vacations.map(v => v.serialize())
+    })
+  }
+
   async index({ inertia }: HttpContext) {
     const programs = await Program.query()
       .preload('category')
@@ -22,11 +33,10 @@ export default class ProgrammesController {
     const trainers = await Trainer.query().preload('user')
     const cohorts = await Cohort.query().orderBy('name', 'asc')
     // Récupérer les vacations avec pré-chargement de leurs programmes
-    const { default: Vacation } = await import('#models/vacation')
     const vacations = await Vacation.query().preload('programs').orderBy('day', 'asc')
-    
-    return inertia.render('administration/programmes/index', { 
-      programs, 
+
+    return inertia.render('administration/programmes/index', {
+      programs,
       categories,
       trainers,
       cohorts,
@@ -42,7 +52,7 @@ export default class ProgrammesController {
 
     const categories = await ProgramCategory.query().orderBy('name', 'asc')
 
-    return inertia.render('programme', {
+    return (inertia as any).render('programme', {
       programs: programs.map((p) => p.serialize()),
       categories: categories.map((c) => c.serialize()),
     })
@@ -57,14 +67,14 @@ export default class ProgrammesController {
       .preload('manuels')
       .firstOrFail()
 
-    return inertia.render('programme_detail', {
+    return (inertia as any).render('programme_detail', {
       program: program.serialize(),
     })
   }
 
   async store({ request, response, session }: HttpContext) {
     const payload = await request.validateUsing(createProgramValidator)
-    
+
     // Slug generation (unique)
     let slug = string.slug(payload.name).toLowerCase()
     const existing = await Program.findBy('slug', slug)
@@ -75,7 +85,7 @@ export default class ProgrammesController {
     // Handle Image
     let coverImagePath: string | null = null
     const image = request.file('coverImage')
-    
+
     if (image) {
       const fileName = `${Date.now()}-${image.clientName}`
       await image.move(app.makePath('public/uploads/programs'), {
@@ -146,7 +156,7 @@ export default class ProgrammesController {
     program.presentation = data.presentation ?? program.presentation ?? ''
     program.duration = data.duration ?? program.duration ?? ''
     program.status = data.status ?? program.status
-    
+
     if (objectives) {
       program.objectives = JSON.stringify(objectives)
     }
@@ -172,7 +182,7 @@ export default class ProgrammesController {
 
   async destroy({ params, response, session }: HttpContext) {
     const program = await Program.findOrFail(params.id)
-    
+
     // Delete image file
     if (program.coverImage) {
       const filePath = app.makePath('public', program.coverImage.substring(1))

@@ -554,7 +554,7 @@ export class UserProfileSchema extends BaseModel {
 }
 
 export class VacationSchema extends BaseModel {
-  static $columns = ['cohortId', 'createdAt', 'day', 'endTime', 'id', 'startTime', 'updatedAt'] as const
+  static $columns = ['cohortId', 'createdAt', 'day', 'endTime', 'id', 'name', 'startTime', 'updatedAt'] as const
   $columns = VacationSchema.$columns
   @column()
   declare cohortId: number
@@ -566,6 +566,8 @@ export class VacationSchema extends BaseModel {
   declare endTime: string
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare name: string | null
   @column()
   declare startTime: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })

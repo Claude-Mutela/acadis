@@ -4,6 +4,7 @@ const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi',
 
 export const vacationValidator = vine.compile(
   vine.object({
+    name: vine.string().trim().optional(),
     cohortId: vine.number(),
     programId: vine.number(),
     day: vine.enum(daysOfWeek),

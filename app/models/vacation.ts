@@ -9,6 +9,9 @@ export default class Vacation extends BaseModel {
   declare id: number
 
   @column()
+  declare name: string | null
+
+  @column()
   declare cohortId: number
 
   @column()

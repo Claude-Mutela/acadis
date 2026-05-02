@@ -9,6 +9,7 @@ export default class VacationsController {
     try {
       // 1. Création de la vacation liée à la cohorte
       const vacation = await Vacation.create({
+        name: payload.name,
         cohortId: payload.cohortId,
         day: payload.day,
         startTime: payload.startTime,
@@ -32,6 +33,7 @@ export default class VacationsController {
 
     try {
       // 1. Mise à jour temporelle et cohorte
+      vacation.name = payload.name || vacation.name
       vacation.cohortId = payload.cohortId
       vacation.day = payload.day
       vacation.startTime = payload.startTime
