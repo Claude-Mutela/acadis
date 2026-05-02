@@ -64,6 +64,16 @@ router
     router.put('/administration/programmes/manuels/:id', [controllers.Manuels, 'update']).as('admin.programmes.manuels.update')
     router.delete('/administration/programmes/manuels/:id', [controllers.Manuels, 'destroy']).as('admin.programmes.manuels.destroy')
     
+    // Vacations
+    router.post('/administration/programmes/vacations', [controllers.Vacations, 'store']).as('admin.programmes.vacations.store')
+    router.put('/administration/programmes/vacations/:id', [controllers.Vacations, 'update']).as('admin.programmes.vacations.update')
+    router.delete('/administration/programmes/vacations/:id', [controllers.Vacations, 'destroy']).as('admin.programmes.vacations.destroy')
+
+    // Catégories de programmes
+    router.post('/administration/programmes/categories', [controllers.ProgramCategories, 'store']).as('admin.programmes.categories.store')
+    router.put('/administration/programmes/categories/:id', [controllers.ProgramCategories, 'update']).as('admin.programmes.categories.update')
+    router.delete('/administration/programmes/categories/:id', [controllers.ProgramCategories, 'destroy']).as('admin.programmes.categories.destroy')
+    
     // Planning
     router.get('/administration/planning', [controllers.Plannings, 'index']).as('admin.planning.index')
     router.post('/administration/planning', [controllers.Plannings, 'store']).as('admin.planning.store')
