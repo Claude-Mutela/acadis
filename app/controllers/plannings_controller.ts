@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import type { HttpContext } from '@adonisjs/core/http'
 import Planning from '#models/planning'
 import Cohort from '#models/cohort'
@@ -9,6 +10,7 @@ export default class PlanningsController {
       .preload('cohorts', (query) => {
         query.preload('programs')
       })
+      .preload('program')
       .withCount('enrollments', (query) => {
         query.whereIn('status', ['pending', 'confirmed'])
       })
@@ -22,7 +24,8 @@ export default class PlanningsController {
       return {
         id: p.id,
         cohortId: cohort?.id,
-        programme: cohort && cohort.programs && cohort.programs.length > 0 ? cohort.programs.map(prog => prog.name).join(', ') : 'Aucun programme',
+        programId: p.programId,
+        programme: p.program?.name || 'Aucun programme',
         cohorte: cohort?.name || 'Aucune cohorte',
         dateDebut: p.startDate ? p.startDate.toISODate() : null,
         dateFin: p.endDate ? p.endDate.toISODate() : null,
@@ -36,7 +39,11 @@ export default class PlanningsController {
     const formattedCohorts = allCohorts.map(c => ({
       id: c.id,
       name: c.name,
-      programs: c.programs && c.programs.length > 0 ? c.programs.map(p => p.name).join(', ') : ''
+      endDate: c.endDate.toISODate(),
+      programs: c.programs.map(p => ({
+        id: p.id,
+        name: p.name
+      }))
     }))
 
     return inertia.render('administration/planning/index', {
@@ -48,7 +55,19 @@ export default class PlanningsController {
   async store({ request, response, session }: HttpContext) {
     const payload = await request.validateUsing(planningValidator)
     
+    // Vérification de la date de fin de la cohorte
+    const cohort = await Cohort.findOrFail(payload.cohortId)
+    const cohortEnd = cohort.endDate
+    const planningStart = DateTime.fromJSDate(payload.startDate)
+    const planningEnd = DateTime.fromJSDate(payload.endDate)
+
+    if (planningStart > cohortEnd || planningEnd > cohortEnd) {
+      session.flash('error', `Les dates du planning ne peuvent pas dépasser la date de fin de la cohorte (${cohortEnd.toISODate()}).`)
+      return response.redirect().back()
+    }
+
     const planning = await Planning.create({
+      programId: payload.programId,
       startDate: payload.startDate,
       endDate: payload.endDate,
       type: payload.type,
@@ -65,8 +84,20 @@ export default class PlanningsController {
   async update({ params, request, response, session }: HttpContext) {
     const planning = await Planning.findOrFail(params.id)
     const payload = await request.validateUsing(planningValidator)
+
+    // Vérification de la date de fin de la cohorte
+    const cohort = await Cohort.findOrFail(payload.cohortId)
+    const cohortEnd = cohort.endDate
+    const planningStart = DateTime.fromJSDate(payload.startDate)
+    const planningEnd = DateTime.fromJSDate(payload.endDate)
+
+    if (planningStart > cohortEnd || planningEnd > cohortEnd) {
+      session.flash('error', `Les dates du planning ne peuvent pas dépasser la date de fin de la cohorte (${cohortEnd.toISODate()}).`)
+      return response.redirect().back()
+    }
     
     planning.merge({
+      programId: payload.programId,
       startDate: payload.startDate,
       endDate: payload.endDate,
       type: payload.type,

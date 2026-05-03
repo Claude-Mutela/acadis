@@ -10,12 +10,14 @@ import {
 interface CohortProp {
   id: number
   name: string
-  programs: string
+  endDate: string
+  programs: { id: number, name: string }[]
 }
 
 interface PlanningProp {
   id: number
   cohortId: number
+  programId: number
   programme: string
   cohorte: string
   dateDebut: string
@@ -60,6 +62,7 @@ export default function PlanningIndex() {
   const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
     id: 0,
     cohortId: '',
+    programId: '',
     startDate: '',
     endDate: '',
     type: 'présentiel',
@@ -94,7 +97,11 @@ export default function PlanningIndex() {
     clearErrors()
     reset()
     if(cohorts.length > 0) {
-      setData('cohortId', cohorts[0].id.toString())
+      setData({
+        ...data,
+        cohortId: cohorts[0].id.toString(),
+        programId: ''
+      })
     }
     setIsModalOpen(true)
   }
@@ -105,6 +112,7 @@ export default function PlanningIndex() {
     setData({
       id: planning.id,
       cohortId: planning.cohortId?.toString() || '',
+      programId: planning.programId?.toString() || '',
       startDate: planning.dateDebut || '',
       endDate: planning.dateFin || '',
       type: planning.type || 'présentiel',
@@ -317,17 +325,41 @@ export default function PlanningIndex() {
                     <>
                       <select 
                         required value={data.cohortId} 
-                        onChange={e => setData('cohortId', e.target.value)}
+                        onChange={e => setData(d => ({ ...d, cohortId: e.target.value, programId: '' }))}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange outline-none font-bold text-gray-700"
                       >
                         <option value="" disabled>-- Choisir une cohorte --</option>
                         {cohorts.map(c => (
-                          <option key={c.id} value={c.id}>{c.name} {c.programs ? `(Prog: ${c.programs})` : ''}</option>
+                          <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
                       {errors.cohortId && <p className="text-red-500 text-xs mt-1">{errors.cohortId}</p>}
+                      
+                      {data.cohortId && (
+                        <div className="mt-2 text-[11px] font-bold text-orange flex items-center gap-1.5 px-3 py-1.5 bg-orange/5 rounded-lg border border-orange/10 italic">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          Attention : La session ne peut pas dépasser le {new Date(cohorts.find(c => c.id.toString() === data.cohortId)?.endDate || '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.
+                        </div>
+                      )}
                     </>
                   )}
+                </div>
+
+                {/* Programme */}
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Sélectionner le Programme</label>
+                  <select 
+                    required value={data.programId} 
+                    onChange={e => setData('programId', e.target.value)}
+                    disabled={!data.cohortId}
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange outline-none font-bold text-gray-700 disabled:opacity-50"
+                  >
+                    <option value="" disabled>-- Choisir un programme --</option>
+                    {data.cohortId && cohorts.find(c => c.id.toString() === data.cohortId)?.programs.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  {errors.programId && <p className="text-red-500 text-xs mt-1">{errors.programId}</p>}
                 </div>
 
                 {/* Date de début */}

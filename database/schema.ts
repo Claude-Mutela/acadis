@@ -334,7 +334,7 @@ export class PaymentHistorySchema extends BaseModel {
 }
 
 export class PlanningSchema extends BaseModel {
-  static $columns = ['capacity', 'createdAt', 'endDate', 'id', 'startDate', 'status', 'type', 'updatedAt'] as const
+  static $columns = ['capacity', 'createdAt', 'endDate', 'id', 'programId', 'startDate', 'status', 'type', 'updatedAt'] as const
   $columns = PlanningSchema.$columns
   @column()
   declare capacity: number
@@ -344,6 +344,8 @@ export class PlanningSchema extends BaseModel {
   declare endDate: DateTime
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare programId: number | null
   @column.date()
   declare startDate: DateTime
   @column()

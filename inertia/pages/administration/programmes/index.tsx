@@ -192,7 +192,7 @@ export default function ProgrammesIndex() {
     slug: string
     categoryId: number | null
     trainerId: number | ''
-    cohortId: number | ''
+    cohortIds: number[]
     description: string
     presentation: string
     duration: string
@@ -205,7 +205,7 @@ export default function ProgrammesIndex() {
     slug: '',
     categoryId: categories[0]?.id || null,
     trainerId: trainers[0]?.id || '',
-    cohortId: cohorts[0]?.id || '',
+    cohortIds: [],
     description: '',
     presentation: '',
     duration: '',
@@ -254,7 +254,7 @@ export default function ProgrammesIndex() {
         slug: prog.slug,
         categoryId: prog.categoryId,
         trainerId: prog.trainerId,
-        cohortId: prog.cohorts?.[0]?.id || '',
+        cohortIds: prog.cohorts?.map(c => c.id) || [],
         description: prog.description,
         presentation: prog.presentation,
         duration: prog.duration,
@@ -271,7 +271,7 @@ export default function ProgrammesIndex() {
         ...programForm.data,
         categoryId: categories[0]?.id || null,
         trainerId: trainers[0]?.id || '',
-        cohortId: cohorts[0]?.id || '',
+        cohortIds: [],
         outputProfile: [''],
         objectives: ['']
       })
@@ -427,7 +427,11 @@ export default function ProgrammesIndex() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
-                      <span className="text-[11px] font-bold text-gray-700">{prog.cohorts?.[0]?.name || 'Non assigné'}</span>
+                      <span className="text-[11px] font-bold text-gray-700">
+                        {prog.cohorts && prog.cohorts.length > 0 
+                          ? prog.cohorts.map(c => c.name).join(', ') 
+                          : 'Aucune cohorte'}
+                      </span>
                       <span className="text-[10px] text-orange font-black uppercase tracking-widest">{prog.category?.name || 'GÉNÉRAL'}</span>
                     </div>
                   </td>
@@ -515,11 +519,28 @@ export default function ProgrammesIndex() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Cohorte de rattachement</label>
-                        <select value={programForm.data.cohortId} onChange={e => programForm.setData('cohortId', parseInt(e.target.value))} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange focus:bg-white outline-none">
-                          <option value="">Choisir une cohorte</option>
-                          {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Cohortes de rattachement</label>
+                        <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-4 bg-gray-50 border border-gray-200 rounded-2xl">
+                          {cohorts.map(c => (
+                            <label key={c.id} className="flex items-center gap-3 cursor-pointer group">
+                              <input 
+                                type="checkbox" 
+                                checked={programForm.data.cohortIds.includes(c.id)}
+                                onChange={(e) => {
+                                  const checked = e.target.checked
+                                  const current = [...programForm.data.cohortIds]
+                                  if (checked) {
+                                    programForm.setData('cohortIds', [...current, c.id])
+                                  } else {
+                                    programForm.setData('cohortIds', current.filter(id => id !== c.id))
+                                  }
+                                }}
+                                className="w-4 h-4 rounded border-gray-300 text-orange focus:ring-orange"
+                              />
+                              <span className="text-sm font-bold text-gray-700 group-hover:text-black transition-colors">{c.name}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Statut Publication</label>

@@ -199,7 +199,7 @@ export default class ProgrammesController {
       coverImagePath = `/uploads/programs/${fileName}`
     }
 
-    const { coverImage, objectives, outputProfile, cohortId, ...data } = payload
+    const { coverImage, objectives, outputProfile, cohortIds, ...data } = payload
 
     try {
       const program = await Program.create({
@@ -213,11 +213,10 @@ export default class ProgrammesController {
         outputProfile: JSON.stringify(outputProfile || [])
       })
 
-      // Attacher la cohorte (relation many-to-many)
-      if (cohortId) {
-        await program.related('cohorts').sync([cohortId])
+      // Attacher les cohortes (relation many-to-many)
+      if (cohortIds && cohortIds.length > 0) {
+        await program.related('cohorts').sync(cohortIds)
       }
-
       session.flash('success', 'Programme créé avec succès !')
       return response.redirect().back()
     } catch (error) {
@@ -248,7 +247,7 @@ export default class ProgrammesController {
       program.coverImage = `/uploads/programs/${fileName}`
     }
 
-    const { coverImage: _unused, objectives, outputProfile, cohortId, ...data } = payload
+    const { coverImage: _unused, objectives, outputProfile, cohortIds, ...data } = payload
 
     // Update fields
     if (data.name) {
@@ -272,9 +271,9 @@ export default class ProgrammesController {
     try {
       await program.save()
 
-      // Synchroniser la cohorte (relation many-to-many)
-      if (cohortId !== undefined) {
-        await program.related('cohorts').sync(cohortId ? [cohortId] : [])
+      // Synchroniser les cohortes (relation many-to-many)
+      if (cohortIds !== undefined) {
+        await program.related('cohorts').sync(cohortIds)
       }
 
       session.flash('success', 'Programme mis à jour avec succès !')
