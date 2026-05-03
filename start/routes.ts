@@ -19,7 +19,7 @@ router.get('/galerie/:slug', async ({ params, inertia }) => {
   return inertia.render('galerie/album', { slug: params.slug })
 }).as('galerie.show')
 router.get('/programme/:slug', [controllers.Programmes, 'publicShow']).as('programme.show')
-router.on('/calendrier').renderInertia('calendrier', {}).as('calendrier')
+router.get('/calendrier', [controllers.Programmes, 'calendar']).as('calendrier')
 router.on('/contact').renderInertia('contact', {}).as('contact')
 
 router

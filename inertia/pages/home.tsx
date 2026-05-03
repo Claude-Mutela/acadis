@@ -386,6 +386,7 @@ export default function Home({ vacations, hasActivePrograms }: Props) {
       </section>
 
 
+
       {/* ════════════════════════════════════════════════════════
           4. ORGANISATION ET RÈGLEMENT
       ════════════════════════════════════════════════════════ */}

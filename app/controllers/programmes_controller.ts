@@ -4,6 +4,8 @@ import ProgramCategory from '#models/program_category'
 import Trainer from '#models/trainer'
 import Cohort from '#models/cohort'
 import Vacation from '#models/vacation'
+import Planning from '#models/planning'
+import { DateTime } from 'luxon'
 import { createProgramValidator, updateProgramValidator } from '#validators/program'
 import app from '@adonisjs/core/services/app'
 import string from '@adonisjs/core/helpers/string'
@@ -14,9 +16,112 @@ export default class ProgrammesController {
     const hasActivePrograms = await Program.query().where('status', 'active').first()
     const vacations = await Vacation.query().preload('programs').orderBy('day', 'asc').orderBy('startTime', 'asc')
 
+    // Session en cours
+    const currentPlanning = await Planning.query()
+      .where('status', 'En cours')
+      .preload('cohorts', (q) => q.preload('programs'))
+      .withCount('enrollments')
+      .first()
+
+    let currentSession = null
+    if (currentPlanning) {
+      const start = DateTime.fromJSDate(new Date(currentPlanning.startDate))
+      const end = DateTime.fromJSDate(new Date(currentPlanning.endDate))
+      const now = DateTime.now()
+      const total = end.diff(start).as('milliseconds')
+      const elapsed = now.diff(start).as('milliseconds')
+      const progression = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)))
+
+      currentSession = {
+        ...currentPlanning.serialize(),
+        progression,
+        enrollmentCount: parseInt(currentPlanning.$extras.enrollments_count || '0'),
+        cohort: currentPlanning.cohorts[0] || null,
+        program: currentPlanning.cohorts[0]?.programs[0] || null,
+      }
+    }
+
+    // Prochaines rentrées
+    const upcomingPlannings = await Planning.query()
+      .where('status', 'Inscriptions')
+      .preload('cohorts', (q) => q.preload('programs'))
+      .withCount('enrollments')
+      .orderBy('startDate', 'asc')
+      .limit(3)
+
+    const upcomingSessions = upcomingPlannings.map((p) => {
+      const start = DateTime.fromJSDate(new Date(p.startDate))
+      const end = DateTime.fromJSDate(new Date(p.endDate))
+      const durationInMonths = Math.round(end.diff(start, 'months').months)
+      const remainingSpots = Math.max(0, p.capacity - parseInt(p.$extras.enrollments_count || '0'))
+
+      return {
+        ...p.serialize(),
+        remainingSpots,
+        durationInMonths,
+        cohort: p.cohorts[0] || null,
+        program: p.cohorts[0]?.programs[0] || null,
+      }
+    })
+
     return (inertia as any).render('home', {
       hasActivePrograms: !!hasActivePrograms,
-      vacations: vacations.map(v => v.serialize())
+      vacations: vacations.map(v => v.serialize()),
+    })
+  }
+
+  async calendar({ inertia }: HttpContext) {
+    // Session en cours
+    const currentPlanning = await Planning.query()
+      .where('status', 'En cours')
+      .preload('cohorts', (q) => q.preload('programs'))
+      .withCount('enrollments')
+      .first()
+
+    let currentSession = null
+    if (currentPlanning) {
+      const start = DateTime.fromJSDate(new Date(currentPlanning.startDate))
+      const end = DateTime.fromJSDate(new Date(currentPlanning.endDate))
+      const now = DateTime.now()
+      const total = end.diff(start).as('milliseconds')
+      const elapsed = now.diff(start).as('milliseconds')
+      const progression = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)))
+
+      currentSession = {
+        ...currentPlanning.serialize(),
+        progression,
+        enrollmentCount: parseInt(currentPlanning.$extras.enrollments_count || '0'),
+        cohort: currentPlanning.cohorts[0] || null,
+        program: currentPlanning.cohorts[0]?.programs[0] || null,
+      }
+    }
+
+    // Prochaines rentrées
+    const upcomingPlannings = await Planning.query()
+      .where('status', 'Inscriptions')
+      .preload('cohorts', (q) => q.preload('programs'))
+      .withCount('enrollments')
+      .orderBy('startDate', 'asc')
+      .limit(3)
+
+    const upcomingSessions = upcomingPlannings.map((p) => {
+      const start = DateTime.fromJSDate(new Date(p.startDate))
+      const end = DateTime.fromJSDate(new Date(p.endDate))
+      const durationInMonths = Math.round(end.diff(start, 'months').months)
+      const remainingSpots = Math.max(0, p.capacity - parseInt(p.$extras.enrollments_count || '0'))
+
+      return {
+        ...p.serialize(),
+        remainingSpots,
+        durationInMonths,
+        cohort: p.cohorts[0] || null,
+        program: p.cohorts[0]?.programs[0] || null,
+      }
+    })
+
+    return (inertia as any).render('calendrier', {
+      currentSession,
+      upcomingSessions,
     })
   }
 
