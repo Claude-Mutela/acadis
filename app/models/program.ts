@@ -7,6 +7,7 @@ import Module from './module.js'
 import Manuel from './manuel.js'
 import Trainer from './trainer.js'
 import Vacation from './vacation.js'
+import Enrollment from './enrollment.js'
 
 export default class Program extends ProgramSchema {
     @column()
@@ -35,4 +36,9 @@ export default class Program extends ProgramSchema {
       pivotTable: 'program_vacation',
     })
     declare vacations: ManyToMany<typeof Vacation>
+
+    @manyToMany(() => Enrollment, {
+        pivotTable: 'enrollment_programs',
+    })
+    declare enrollments: ManyToMany<typeof Enrollment>
 }

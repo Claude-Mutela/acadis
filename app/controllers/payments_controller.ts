@@ -16,7 +16,7 @@ export default class PaymentsController {
     const payments = await Payment.query()
       .preload('user', (q) => {
         q.preload('enrollments', (eq) => {
-          eq.preload('program').preload('vacation').preload('planning', (pq) => {
+          eq.preload('programs').preload('vacation').preload('planning', (pq) => {
             pq.preload('cohorts')
           })
         })
@@ -28,10 +28,10 @@ export default class PaymentsController {
     
     const serializedPayments = payments.map((p) => {
       const mp = manualPurchases.find((m) => m.paymentId === p.id)
-      const enrollment = p.user?.enrollments?.find(e => e.programId === p.programId) || p.user?.enrollments?.[0]
+      const enrollment = p.user?.enrollments?.find(e => e.programs.some(prog => prog.id === p.programId)) || p.user?.enrollments?.[0]
       
       // Fallback hierarchy for programId: Payment -> Manual -> Enrollment
-      const programId = p.programId || mp?.manuel?.programId || enrollment?.programId || 0
+      const programId = p.programId || mp?.manuel?.programId || enrollment?.programs?.[0]?.id || 0
 
       return {
         id: p.id,

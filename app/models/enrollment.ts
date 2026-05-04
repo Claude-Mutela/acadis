@@ -1,6 +1,6 @@
 import { EnrollmentSchema } from '#database/schema'
-import { belongsTo, column } from '@adonisjs/lucid/orm'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
+import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import Planning from '#models/planning'
 import Program from '#models/program'
@@ -19,8 +19,10 @@ export default class Enrollment extends EnrollmentSchema {
   @belongsTo(() => User, { foreignKey: 'enrolledBy' })
   declare enrolledByUser: BelongsTo<typeof User>
 
-  @belongsTo(() => Program)
-  declare program: BelongsTo<typeof Program>
+  @manyToMany(() => Program, {
+    pivotTable: 'enrollment_programs',
+  })
+  declare programs: ManyToMany<typeof Program>
 
   @belongsTo(() => Vacation)
   declare vacation: BelongsTo<typeof Vacation>

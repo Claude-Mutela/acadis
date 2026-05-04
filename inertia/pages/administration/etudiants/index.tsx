@@ -14,10 +14,15 @@ interface StudentProp {
   eglise: string
   ministere: string
   programme: string
+  programmes: string[]
+  programIds: string[]
   session: string
   type: string
   statut: string
   cohort: string
+  cohortId: string
+  planningId: string
+  vacationId: string
   estOuvrier: boolean
   departement: string
   vacation: string
@@ -43,8 +48,10 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       const latestEnrollment = student.enrollments?.[0]
       const planning = latestEnrollment?.planning
       const cohort = planning?.cohorts?.[0]
-      const program = latestEnrollment?.program
+      const programs = latestEnrollment?.programs || []
       const vacation = latestEnrollment?.vacation
+      const programNames = programs.map((p: any) => p.name)
+      const programIds = programs.map((p: any) => p.id.toString())
 
       return {
         id: student.id,
@@ -54,11 +61,16 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
         telephone: profile?.phoneNumber || '-',
         eglise: profile?.homeChurch || '-',
         ministere: profile?.ministry || '-',
-        programme: program?.name || 'Non inscrit',
+        programme: programNames.length > 0 ? programNames.join(', ') : 'Non inscrit',
+        programmes: programNames,
+        programIds: programIds,
         session: vacation ? `${vacation.day} (${vacation.startTime} - ${vacation.endTime})` : '-',
         type: planning?.type || '-',
         statut: latestEnrollment?.status || student.status || 'Aucun',
         cohort: cohort?.name || '-',
+        cohortId: cohort?.id?.toString() || '',
+        planningId: planning?.id?.toString() || '',
+        vacationId: vacation?.id?.toString() || '',
         estOuvrier: profile?.worker === 'Oui',
         departement: profile?.ministry || '-',
         vacation: vacation?.day || '-',
@@ -110,7 +122,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
     phoneNumber: '',
     dateOfBirth: '',
     cohortId: '',
-    programId: '',
+    programIds: [] as string[],
     planningId: '',
     vacationId: '',
     status: 'pending'
@@ -124,11 +136,12 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
   }, [formData.cohortId, filters.cohorts])
 
   const modalVacations = useMemo(() => {
-    if (!formData.programId) return []
-    const program = filters.allPrograms.find(p => p.id.toString() === formData.programId.toString())
-    // Filtrer les vacations par programme et éventuellement par cohorte
+    if (formData.programIds.length === 0) return []
+    // On se base sur le premier programme sélectionné pour les vacations (elles sont souvent communes)
+    const firstProgramId = formData.programIds[0]
+    const program = filters.allPrograms.find(p => p.id.toString() === firstProgramId.toString())
     return program?.vacations || []
-  }, [formData.programId, filters.allPrograms])
+  }, [formData.programIds, filters.allPrograms])
 
   // Résolution du planningId depuis la cohorte (premier planning actif)
   const resolvedPlanningId = useMemo(() => {
@@ -147,12 +160,14 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
   }, [resolvedPlanningId])
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, programId: '', vacationId: '' }))
+    setFormData(prev => ({ ...prev, programIds: [], vacationId: '' }))
   }, [formData.cohortId])
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, vacationId: '' }))
-  }, [formData.programId])
+    if (formData.programIds.length === 0) {
+      setFormData(prev => ({ ...prev, vacationId: '' }))
+    }
+  }, [formData.programIds])
 
   // ── Logique des Filtres Dynamiques (Tableau) ────────────────────────────────
   const availablePrograms = useMemo(() => {
@@ -177,7 +192,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
         student.email.toLowerCase().includes(search.toLowerCase())
       
       const matchCohort = filterCohort === 'Tous' || student.cohort === filterCohort
-      const matchProgramme = filterProgramme === 'Tous' || student.programme === filterProgramme
+      const matchProgramme = filterProgramme === 'Tous' || student.programmes.includes(filterProgramme)
       
       return matchSearch && matchCohort && matchProgramme
     })
@@ -217,7 +232,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       phoneNumber: '',
       dateOfBirth: '',
       cohortId: '',
-      programId: '',
+      programIds: [],
       planningId: '',
       vacationId: '',
       status: 'pending'
@@ -243,10 +258,10 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       address: '',
       phoneNumber: student.telephone !== '-' ? student.telephone : '',
       dateOfBirth: '',
-      cohortId: '',
-      programId: '',
-      planningId: '',
-      vacationId: '',
+      cohortId: student.cohortId,
+      programIds: student.programIds,
+      planningId: student.planningId,
+      vacationId: student.vacationId,
       status: student.statut === 'confirmed' ? 'confirmed'
              : student.statut === 'rejected'  ? 'rejected'
              : student.statut === 'cancelled' ? 'cancelled'
@@ -276,7 +291,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       phoneNumber: formData.phoneNumber || null,
       dateofbirth: formData.dateOfBirth || null,
       planningId: Number(formData.planningId) || undefined,
-      programId: Number(formData.programId) || undefined,
+      programIds: formData.programIds.map(id => Number(id)),
       vacationId: formData.vacationId ? Number(formData.vacationId) : null,
       status: formData.status,
     }
@@ -719,27 +734,41 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                       </select>
                       {errors.planningId && <p className="text-red-500 text-xs mt-1">{errors.planningId}</p>}
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Programme</label>
-                      <select 
-                        required
-                        disabled={!formData.cohortId}
-                        value={formData.programId}
-                        onChange={e => setFormData({...formData, programId: e.target.value})}
-                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-opacity ${errors.programId ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
-                      >
-                        <option value="">Choisir un programme</option>
-                        {modalPrograms.map((p: any) => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                      {errors.programId && <p className="text-red-500 text-xs mt-1">{errors.programId}</p>}
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Programmes (Plusieurs choix possibles)</label>
+                      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-gray-50 border rounded-xl transition-all ${errors.programIds ? 'border-red-400 bg-red-50' : 'border-gray-200'} ${!formData.cohortId ? 'opacity-30' : ''}`}>
+                        {!formData.cohortId ? (
+                          <p className="text-xs text-gray-400 italic col-span-2">Sélectionnez d'abord une cohorte</p>
+                        ) : modalPrograms.length > 0 ? (
+                          modalPrograms.map((p: any) => (
+                            <label key={p.id} className="flex items-center gap-3 cursor-pointer group">
+                              <input 
+                                type="checkbox"
+                                value={p.id}
+                                checked={formData.programIds.includes(p.id.toString())}
+                                onChange={e => {
+                                  const id = p.id.toString()
+                                  const newIds = e.target.checked 
+                                    ? [...formData.programIds, id]
+                                    : formData.programIds.filter(item => item !== id)
+                                  setFormData({...formData, programIds: newIds})
+                                }}
+                                className="w-4 h-4 text-orange bg-white border-gray-300 rounded focus:ring-orange"
+                              />
+                              <span className="text-sm font-medium text-gray-700 group-hover:text-black transition-colors">{p.name}</span>
+                            </label>
+                          ))
+                        ) : (
+                          <p className="text-xs text-gray-400 italic col-span-2">Aucun programme lié à cette cohorte</p>
+                        )}
+                      </div>
+                      {errors.programIds && <p className="text-red-500 text-xs mt-1">{errors.programIds}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Vacation</label>
                       <select 
                         required
-                        disabled={!formData.programId}
+                        disabled={formData.programIds.length === 0}
                         value={formData.vacationId}
                         onChange={e => setFormData({...formData, vacationId: e.target.value})}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"

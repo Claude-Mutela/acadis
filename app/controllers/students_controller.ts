@@ -19,7 +19,7 @@ export default class StudentsController {
         query.preload('planning', (pQuery) => {
           pQuery.preload('cohorts')
         })
-        query.preload('program')
+        query.preload('programs')
         query.preload('vacation')
         query.orderBy('created_at', 'desc')
       })
@@ -71,14 +71,16 @@ export default class StudentsController {
       }, { client: trx })
 
       // 3. Créer l'inscription
-      await Enrollment.create({
+      const enrollment = await Enrollment.create({
         userId: user.id,
         planningId: payload.planningId,
-        programId: payload.programId,
         vacationId: payload.vacationId ?? null,
         status: payload.status as 'pending' | 'confirmed' | 'rejected' | 'cancelled',
         enrolledBy: auth.user?.id ?? null,
       }, { client: trx })
+
+      // 4. Attacher les programmes
+      await enrollment.related('programs').attach(payload.programIds)
     })
 
     session.flash('success', 'Étudiant inscrit avec succès.')
@@ -121,11 +123,15 @@ export default class StudentsController {
 
       if (enrollment) {
         if (payload.planningId !== undefined) enrollment.planningId = payload.planningId
-        if (payload.programId !== undefined) enrollment.programId = payload.programId
         if (payload.vacationId !== undefined) enrollment.vacationId = payload.vacationId ?? null
         if (payload.status !== undefined) enrollment.status = payload.status as 'pending' | 'confirmed' | 'rejected' | 'cancelled'
         enrollment.useTransaction(trx)
         await enrollment.save()
+
+        // Synchroniser les programmes si fournis
+        if (payload.programIds !== undefined) {
+          await enrollment.related('programs').sync(payload.programIds)
+        }
       }
     })
 

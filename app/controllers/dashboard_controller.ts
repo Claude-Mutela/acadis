@@ -23,14 +23,14 @@ export default class DashboardController {
     // 3. Derniers inscrits (5)
     const recentStudentsRaw = await User.query()
       .where('role', 'student')
-      .preload('enrollments', (q) => q.preload('program'))
+      .preload('enrollments', (q) => q.preload('programs'))
       .orderBy('createdAt', 'desc')
       .limit(5)
 
     const recentStudents = recentStudentsRaw.map(s => ({
       id: s.id,
       name: s.fullName,
-      program: s.enrollments?.[0]?.program?.name || 'En attente d\'inscription',
+      program: s.enrollments?.[0]?.programs?.map(p => p.name).join(', ') || 'En attente d\'inscription',
       initials: (s.firstName?.[0] || '') + (s.lastName?.[0] || ''),
       date: s.createdAt?.toRelative({ locale: 'fr' }) ?? 'Récemment'
     }))

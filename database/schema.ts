@@ -108,7 +108,7 @@ export class DepartmentSchema extends BaseModel {
 }
 
 export class EnrollmentSchema extends BaseModel {
-  static $columns = ['createdAt', 'enrolledAt', 'enrolledBy', 'id', 'notes', 'planningId', 'programId', 'status', 'updatedAt', 'userId', 'vacationId'] as const
+  static $columns = ['createdAt', 'enrolledAt', 'enrolledBy', 'id', 'notes', 'planningId', 'status', 'updatedAt', 'userId', 'vacationId'] as const
   $columns = EnrollmentSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -123,8 +123,6 @@ export class EnrollmentSchema extends BaseModel {
   @column()
   declare planningId: number
   @column()
-  declare programId: number | null
-  @column()
   declare status: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
@@ -132,6 +130,21 @@ export class EnrollmentSchema extends BaseModel {
   declare userId: number
   @column()
   declare vacationId: number | null
+}
+
+export class EnrollmentProgramSchema extends BaseModel {
+  static $columns = ['createdAt', 'enrollmentId', 'id', 'programId', 'updatedAt'] as const
+  $columns = EnrollmentProgramSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare enrollmentId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare programId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
 }
 
 export class ImageSchema extends BaseModel {
