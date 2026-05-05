@@ -16,6 +16,7 @@ interface StudentProp {
   programme: string
   programmes: string[]
   programIds: string[]
+  selectedPrograms: { id: string, vacationId: string }[]
   session: string
   type: string
   statut: string
@@ -49,9 +50,21 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       const planning = latestEnrollment?.planning
       const cohort = planning?.cohorts?.[0]
       const programs = latestEnrollment?.programs || []
-      const vacation = latestEnrollment?.vacation
       const programNames = programs.map((p: any) => p.name)
       const programIds = programs.map((p: any) => p.id.toString())
+      
+      const selectedPrograms = programs.map((p: any) => ({
+        id: p.id.toString(),
+        vacationId: p.pivot_vacation_id?.toString() || '',
+      }))
+
+      const sessionDetails = programs.map((p: any) => {
+        const vId = p.pivot_vacation_id
+        // Trouver la vacation dans allPrograms (puisque non préchargée directement sur le pivot facilement)
+        const allVacations = filters.allPrograms.flatMap(ap => ap.vacations || [])
+        const v = allVacations.find(av => av.id === vId)
+        return v ? (v.name || `${v.day} (${v.startTime})`) : '-'
+      })
 
       return {
         id: student.id,
@@ -64,16 +77,17 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
         programme: programNames.length > 0 ? programNames.join(', ') : 'Non inscrit',
         programmes: programNames,
         programIds: programIds,
-        session: vacation ? `${vacation.day} (${vacation.startTime} - ${vacation.endTime})` : '-',
+        selectedPrograms,
+        session: Array.from(new Set(sessionDetails)).join(', '),
         type: planning?.type || '-',
         statut: latestEnrollment?.status || student.status || 'Aucun',
         cohort: cohort?.name || '-',
         cohortId: cohort?.id?.toString() || '',
         planningId: planning?.id?.toString() || '',
-        vacationId: vacation?.id?.toString() || '',
+        vacationId: '', // n'est plus utilisé au niveau racine
         estOuvrier: profile?.worker === 'Oui',
         departement: profile?.ministry || '-',
-        vacation: vacation?.day || '-',
+        vacation: Array.from(new Set(sessionDetails)).join(', '),
       }
     })
   }, [rawStudents])
@@ -122,9 +136,8 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
     phoneNumber: '',
     dateOfBirth: '',
     cohortId: '',
-    programIds: [] as string[],
+    programs: [] as { id: string, vacationId: string }[],
     planningId: '',
-    vacationId: '',
     status: 'pending'
   })
 
@@ -135,13 +148,24 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
     return cohort?.programs || []
   }, [formData.cohortId, filters.cohorts])
 
-  const modalVacations = useMemo(() => {
-    if (formData.programIds.length === 0) return []
-    // On se base sur le premier programme sélectionné pour les vacations (elles sont souvent communes)
-    const firstProgramId = formData.programIds[0]
-    const program = filters.allPrograms.find(p => p.id.toString() === firstProgramId.toString())
-    return program?.vacations || []
-  }, [formData.programIds, filters.allPrograms])
+  const getProgramVacations = (programId: string) => {
+    const program = filters.allPrograms.find(p => p.id.toString() === programId)
+    const vacations = program?.vacations || []
+    // Retourner uniquement les vacations avec des noms uniques
+    const uniqueVacations: any[] = []
+    const seenNames = new Set()
+    for (const v of vacations) {
+      if (v.name && !seenNames.has(v.name)) {
+        seenNames.add(v.name)
+        uniqueVacations.push(v)
+      } else if (!v.name && !seenNames.has(`${v.day} (${v.startTime})`)) {
+         // Fallback si pas de nom (pour les anciennes données)
+         seenNames.add(`${v.day} (${v.startTime})`)
+         uniqueVacations.push(v)
+      }
+    }
+    return uniqueVacations
+  }
 
   // Résolution du planningId depuis la cohorte (premier planning actif)
   const resolvedPlanningId = useMemo(() => {
@@ -160,14 +184,8 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
   }, [resolvedPlanningId])
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, programIds: [], vacationId: '' }))
+    setFormData(prev => ({ ...prev, programs: [] }))
   }, [formData.cohortId])
-
-  useEffect(() => {
-    if (formData.programIds.length === 0) {
-      setFormData(prev => ({ ...prev, vacationId: '' }))
-    }
-  }, [formData.programIds])
 
   // ── Logique des Filtres Dynamiques (Tableau) ────────────────────────────────
   const availablePrograms = useMemo(() => {
@@ -232,9 +250,8 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       phoneNumber: '',
       dateOfBirth: '',
       cohortId: '',
-      programIds: [],
+      programs: [],
       planningId: '',
-      vacationId: '',
       status: 'pending'
     })
     setIsModalOpen(true)
@@ -259,9 +276,8 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       phoneNumber: student.telephone !== '-' ? student.telephone : '',
       dateOfBirth: '',
       cohortId: student.cohortId,
-      programIds: student.programIds,
+      programs: student.selectedPrograms,
       planningId: student.planningId,
-      vacationId: student.vacationId,
       status: student.statut === 'confirmed' ? 'confirmed'
              : student.statut === 'rejected'  ? 'rejected'
              : student.statut === 'cancelled' ? 'cancelled'
@@ -291,8 +307,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       phoneNumber: formData.phoneNumber || null,
       dateofbirth: formData.dateOfBirth || null,
       planningId: Number(formData.planningId) || undefined,
-      programIds: formData.programIds.map(id => Number(id)),
-      vacationId: formData.vacationId ? Number(formData.vacationId) : null,
+      programs: formData.programs.map(p => ({ id: Number(p.id), vacationId: Number(p.vacationId) })),
       status: formData.status,
     }
 
@@ -426,7 +441,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-orange/10 text-orange flex items-center justify-center font-bold text-sm flex-shrink-0 uppercase">
-                          {student.prenom[0]}{student.nom[0]}
+                          {(student.prenom?.[0] || '')}{(student.nom?.[0] || '')}
                         </div>
                         <div>
                           <div className="font-bold text-gray-900 uppercase">{student.nom} <span className="capitalize">{student.prenom}</span></div>
@@ -735,49 +750,61 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
                       {errors.planningId && <p className="text-red-500 text-xs mt-1">{errors.planningId}</p>}
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Programmes (Plusieurs choix possibles)</label>
-                      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-gray-50 border rounded-xl transition-all ${errors.programIds ? 'border-red-400 bg-red-50' : 'border-gray-200'} ${!formData.cohortId ? 'opacity-30' : ''}`}>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Programmes et Vacations</label>
+                      <div className={`grid grid-cols-1 gap-4 p-4 bg-gray-50 border rounded-xl transition-all ${errors.programs ? 'border-red-400 bg-red-50' : 'border-gray-200'} ${!formData.cohortId ? 'opacity-30' : ''}`}>
                         {!formData.cohortId ? (
-                          <p className="text-xs text-gray-400 italic col-span-2">Sélectionnez d'abord une cohorte</p>
+                          <p className="text-xs text-gray-400 italic">Sélectionnez d'abord une cohorte</p>
                         ) : modalPrograms.length > 0 ? (
-                          modalPrograms.map((p: any) => (
-                            <label key={p.id} className="flex items-center gap-3 cursor-pointer group">
-                              <input 
-                                type="checkbox"
-                                value={p.id}
-                                checked={formData.programIds.includes(p.id.toString())}
-                                onChange={e => {
-                                  const id = p.id.toString()
-                                  const newIds = e.target.checked 
-                                    ? [...formData.programIds, id]
-                                    : formData.programIds.filter(item => item !== id)
-                                  setFormData({...formData, programIds: newIds})
-                                }}
-                                className="w-4 h-4 text-orange bg-white border-gray-300 rounded focus:ring-orange"
-                              />
-                              <span className="text-sm font-medium text-gray-700 group-hover:text-black transition-colors">{p.name}</span>
-                            </label>
-                          ))
+                          modalPrograms.map((p: any) => {
+                            const isSelected = formData.programs.some(sp => sp.id === p.id.toString())
+                            return (
+                              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 bg-white border border-gray-100 rounded-lg shadow-sm">
+                                <label className="flex items-center gap-3 cursor-pointer group flex-1">
+                                  <input 
+                                    type="checkbox"
+                                    value={p.id}
+                                    checked={isSelected}
+                                    onChange={e => {
+                                      const id = p.id.toString()
+                                      if (e.target.checked) {
+                                        setFormData({...formData, programs: [...formData.programs, { id, vacationId: '' }]})
+                                      } else {
+                                        setFormData({...formData, programs: formData.programs.filter(item => item.id !== id)})
+                                      }
+                                    }}
+                                    className="w-4 h-4 text-orange bg-white border-gray-300 rounded focus:ring-orange"
+                                  />
+                                  <span className="text-sm font-medium text-gray-700 group-hover:text-black transition-colors">{p.name}</span>
+                                </label>
+                                
+                                {isSelected && (
+                                  <div className="flex-1">
+                                    <select 
+                                      required
+                                      value={formData.programs.find(sp => sp.id === p.id.toString())?.vacationId || ''}
+                                      onChange={e => {
+                                        const newPrograms = formData.programs.map(sp => 
+                                          sp.id === p.id.toString() ? { ...sp, vacationId: e.target.value } : sp
+                                        )
+                                        setFormData({...formData, programs: newPrograms})
+                                      }}
+                                      className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer"
+                                    >
+                                      <option value="">Choisir la vacation</option>
+                                      {getProgramVacations(p.id.toString()).map((v: any) => (
+                                        <option key={v.id} value={v.id}>{v.name || `${v.day} (${v.startTime})`}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })
                         ) : (
-                          <p className="text-xs text-gray-400 italic col-span-2">Aucun programme lié à cette cohorte</p>
+                          <p className="text-xs text-gray-400 italic">Aucun programme lié à cette cohorte</p>
                         )}
                       </div>
-                      {errors.programIds && <p className="text-red-500 text-xs mt-1">{errors.programIds}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Vacation</label>
-                      <select 
-                        required
-                        disabled={formData.programIds.length === 0}
-                        value={formData.vacationId}
-                        onChange={e => setFormData({...formData, vacationId: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange focus:border-transparent outline-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
-                      >
-                        <option value="">Choisir la vacation</option>
-                        {modalVacations.map((v: any) => (
-                          <option key={v.id} value={v.id}>{v.day} ({v.startTime} - {v.endTime})</option>
-                        ))}
-                      </select>
+                      {errors.programs && <p className="text-red-500 text-xs mt-1">{errors.programs}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Statut Inscription</label>
