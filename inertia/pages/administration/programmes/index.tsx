@@ -159,12 +159,12 @@ export default function ProgrammesIndex() {
   // ── Logic: Vacations (useForm) ────────────────────────────────────────────────
   const [editingVacation, setEditingVacation] = useState<Vacation | null>(null)
   const vacationForm = useForm({
-    name: '',
-    programId: '',
+    name: 'Matin',
     cohortId: '',
+    programId: '',
     day: 'Lundi',
     startTime: '08:00',
-    endTime: '10:00'
+    endTime: '12:00'
   })
 
   const handleSaveVacation = (e: React.FormEvent) => {
@@ -399,7 +399,7 @@ export default function ProgrammesIndex() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100 uppercase text-[10px] font-black text-gray-400 tracking-[0.2em]">
+              <tr className="bg-gray-50 border-b border-gray-100 uppercase text-[10px] font-black text-gray-400 tracking-[0.2em] ">
                 <th className="px-6 py-5">Visuel</th>
                 <th className="px-6 py-5">Cursus Pédagogique</th>
                 <th className="px-6 py-5">Cohorte / Cat.</th>
@@ -1013,6 +1013,16 @@ export default function ProgrammesIndex() {
                            </p>
                         </div>
                        )}
+                       <div className="col-span-2">
+                          <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Type de Vacation</label>
+                          <select required value={vacationForm.data.name} onChange={e => vacationForm.setData('name', e.target.value)} className={`w-full px-4 py-3 bg-white border rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none ${vacationForm.errors.name ? 'border-red-300 bg-red-50/50' : 'border-blue-100'}`}>
+                            <option value="Matin">Matin</option>
+                            <option value="Midi">Midi</option>
+                            <option value="Soir">Soir</option>
+                            <option value="Spécial">Spécial</option>
+                            <option value="Intensive">Intensive</option>
+                          </select>
+                       </div>
                        <div className="col-span-2 sm:col-span-1">
                           <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest ml-1">Cohorte</label>
                           <select required value={vacationForm.data.cohortId} onChange={e => {vacationForm.setData('cohortId', e.target.value); vacationForm.setData('programId', '')}} className={`w-full px-4 py-3 bg-white border rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none ${vacationForm.errors.cohortId ? 'border-red-300 bg-red-50/50' : 'border-blue-100'}`}>

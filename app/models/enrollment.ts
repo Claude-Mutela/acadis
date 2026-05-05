@@ -21,9 +21,7 @@ export default class Enrollment extends EnrollmentSchema {
 
   @manyToMany(() => Program, {
     pivotTable: 'enrollment_programs',
+    pivotColumns: ['vacation_id'],
   })
   declare programs: ManyToMany<typeof Program>
-
-  @belongsTo(() => Vacation)
-  declare vacation: BelongsTo<typeof Vacation>
 }

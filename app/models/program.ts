@@ -39,6 +39,7 @@ export default class Program extends ProgramSchema {
 
     @manyToMany(() => Enrollment, {
         pivotTable: 'enrollment_programs',
+        pivotColumns: ['vacation_id'],
     })
     declare enrollments: ManyToMany<typeof Enrollment>
 }

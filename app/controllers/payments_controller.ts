@@ -16,7 +16,7 @@ export default class PaymentsController {
     const payments = await Payment.query()
       .preload('user', (q) => {
         q.preload('enrollments', (eq) => {
-          eq.preload('programs').preload('vacation').preload('planning', (pq) => {
+          eq.preload('programs', (pq) => pq.pivotColumns(['vacation_id'])).preload('planning', (pq) => {
             pq.preload('cohorts')
           })
         })
@@ -32,6 +32,8 @@ export default class PaymentsController {
       
       // Fallback hierarchy for programId: Payment -> Manual -> Enrollment
       const programId = p.programId || mp?.manuel?.programId || enrollment?.programs?.[0]?.id || 0
+      const targetProgram = enrollment?.programs.find(prog => prog.id === programId) || enrollment?.programs[0]
+      const vacationId = targetProgram?.$extras.pivot_vacation_id || 0
 
       return {
         id: p.id,
@@ -47,7 +49,7 @@ export default class PaymentsController {
         userId: p.userId,
         manuelId: mp?.manuelId || 0,
         programId: Number(programId),
-        vacationId: Number(enrollment?.vacationId || 0),
+        vacationId: Number(vacationId),
         cohortId: Number(enrollment?.planning?.cohorts?.[0]?.id || 0)
       }
     })

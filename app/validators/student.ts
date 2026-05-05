@@ -23,8 +23,12 @@ export const storeStudentValidator = vine.compile(
 
     // Inscription académique
     planningId: vine.number().positive(),
-    programIds: vine.array(vine.number().positive()),
-    vacationId: vine.number().positive().nullable().optional(),
+    programs: vine.array(
+      vine.object({
+        id: vine.number().positive(),
+        vacationId: vine.number().positive(),
+      })
+    ),
     status: vine.string().trim().in(['pending', 'confirmed', 'rejected', 'cancelled']),
   })
 )
@@ -48,8 +52,12 @@ export const updateStudentValidator = vine.compile(
 
     // Inscription académique
     planningId: vine.number().positive().optional(),
-    programIds: vine.array(vine.number().positive()).optional(),
-    vacationId: vine.number().positive().nullable().optional(),
+    programs: vine.array(
+      vine.object({
+        id: vine.number().positive(),
+        vacationId: vine.number().positive(),
+      })
+    ).optional(),
     status: vine.string().trim().in(['pending', 'confirmed', 'rejected', 'cancelled']).optional(),
   })
 )

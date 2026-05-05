@@ -19,9 +19,9 @@ export default class StudentsController {
         query.preload('planning', (pQuery) => {
           pQuery.preload('cohorts')
         })
-        query.preload('programs')
-        query.preload('vacation')
-        query.orderBy('created_at', 'desc')
+        query.preload('programs', (pq) => {
+          pq.pivotColumns(['vacation_id'])
+        })
       })
       .orderBy('last_name', 'asc')
 
@@ -74,13 +74,16 @@ export default class StudentsController {
       const enrollment = await Enrollment.create({
         userId: user.id,
         planningId: payload.planningId,
-        vacationId: payload.vacationId ?? null,
         status: payload.status as 'pending' | 'confirmed' | 'rejected' | 'cancelled',
         enrolledBy: auth.user?.id ?? null,
       }, { client: trx })
 
-      // 4. Attacher les programmes
-      await enrollment.related('programs').attach(payload.programIds)
+      // 4. Attacher les programmes avec leurs vacations
+      const programsData = {}
+      payload.programs.forEach(p => {
+        programsData[p.id] = { vacation_id: p.vacationId }
+      })
+      await enrollment.related('programs').attach(programsData)
     })
 
     session.flash('success', 'Étudiant inscrit avec succès.')
@@ -123,14 +126,17 @@ export default class StudentsController {
 
       if (enrollment) {
         if (payload.planningId !== undefined) enrollment.planningId = payload.planningId
-        if (payload.vacationId !== undefined) enrollment.vacationId = payload.vacationId ?? null
         if (payload.status !== undefined) enrollment.status = payload.status as 'pending' | 'confirmed' | 'rejected' | 'cancelled'
         enrollment.useTransaction(trx)
         await enrollment.save()
 
         // Synchroniser les programmes si fournis
-        if (payload.programIds !== undefined) {
-          await enrollment.related('programs').sync(payload.programIds)
+        if (payload.programs !== undefined) {
+          const syncData = {}
+          payload.programs.forEach(p => {
+            syncData[p.id] = { vacation_id: p.vacationId }
+          })
+          await enrollment.related('programs').sync(syncData)
         }
       }
     })
