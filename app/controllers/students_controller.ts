@@ -7,6 +7,7 @@ import Enrollment from '#models/enrollment'
 import Cohort from '#models/cohort'
 import Program from '#models/program'
 import Department from '#models/department'
+import Vacation from '#models/vacation'
 import { storeStudentValidator, updateStudentValidator } from '#validators/student'
 
 export default class StudentsController {
@@ -19,11 +20,15 @@ export default class StudentsController {
         query.preload('planning', (pQuery) => {
           pQuery.preload('cohorts')
         })
-        query.preload('programs', (pq) => {
-          pq.pivotColumns(['vacation_id'])
-        })
+        query.preload('programs')
       })
       .orderBy('last_name', 'asc')
+
+    // Requête directe sur enrollment_programs pour contourner le bug de
+    // sérialisation de pivotColumns() dans les preloads imbriqués
+    const enrollmentPrograms = await db
+      .from('enrollment_programs')
+      .select('enrollment_id', 'program_id', 'vacation_id')
 
     const cohorts = await Cohort.query()
       .preload('programs', (q) => q.preload('vacations'))
@@ -35,10 +40,12 @@ export default class StudentsController {
       .orderBy('name', 'asc')
 
     const departments = await Department.query().orderBy('name', 'asc')
+    const allVacations = await Vacation.query().orderBy('name', 'asc')
 
     return inertia.render('administration/etudiants/index', {
       students,
-      filters: { cohorts, allPrograms, departments }
+      enrollmentPrograms,
+      filters: { cohorts, allPrograms, departments, allVacations }
     } as any)
   }
 

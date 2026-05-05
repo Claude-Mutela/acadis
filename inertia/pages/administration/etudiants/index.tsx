@@ -31,15 +31,17 @@ interface StudentProp {
 
 interface PageProps {
   students: any[]
+  enrollmentPrograms: { enrollment_id: number; program_id: number; vacation_id: number | null }[]
   filters: {
     cohorts: any[]
     allPrograms: any[]
     departments: any[]
+    allVacations: { id: number; name: string | null; day: string; startTime: string }[]
   }
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function EtudiantsIndex({ students: rawStudents, filters }: PageProps) {
+export default function EtudiantsIndex({ students: rawStudents, filters, enrollmentPrograms }: PageProps) {
   const { errors } = usePage<{ errors: Record<string, string> }>().props
 
   // ── Formatage des données (Logicielle de présentation) ──────────────────────
@@ -53,16 +55,23 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       const programNames = programs.map((p: any) => p.name)
       const programIds = programs.map((p: any) => p.id.toString())
       
-      const selectedPrograms = programs.map((p: any) => ({
-        id: p.id.toString(),
-        vacationId: p.pivot_vacation_id?.toString() || '',
-      }))
+      const selectedPrograms = programs.map((p: any) => {
+        const ep = enrollmentPrograms.find(
+          row => row.enrollment_id === latestEnrollment?.id && row.program_id === p.id
+        )
+        return {
+          id: p.id.toString(),
+          vacationId: ep?.vacation_id?.toString() || '',
+        }
+      })
 
       const sessionDetails = programs.map((p: any) => {
-        const vId = p.pivot_vacation_id
-        // Trouver la vacation dans allPrograms (puisque non préchargée directement sur le pivot facilement)
-        const allVacations = filters.allPrograms.flatMap(ap => ap.vacations || [])
-        const v = allVacations.find(av => av.id === vId)
+        const ep = enrollmentPrograms.find(
+          row => row.enrollment_id === latestEnrollment?.id && row.program_id === p.id
+        )
+        const vId = ep?.vacation_id
+        if (!vId) return '-'
+        const v = filters.allVacations.find(av => Number(av.id) === Number(vId))
         return v ? (v.name || `${v.day} (${v.startTime})`) : '-'
       })
 
@@ -90,7 +99,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
         vacation: Array.from(new Set(sessionDetails)).join(', '),
       }
     })
-  }, [rawStudents])
+  }, [rawStudents, filters.allVacations])
 
   const formattedCohorts = useMemo(() => {
     return filters.cohorts.map((c) => ({
@@ -104,6 +113,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
   const [search, setSearch] = useState('')
   const [filterCohort, setFilterCohort] = useState('Tous')
   const [filterProgramme, setFilterProgramme] = useState('Tous')
+  const [filterVacation, setFilterVacation] = useState('Tous')
   
   // États de pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -194,6 +204,13 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
     return Array.from(new Set(programs))
   }, [filterCohort, formattedCohorts, filters.allPrograms])
 
+  const availableVacationNames = useMemo(() => {
+    const names = filters.allVacations
+      .map(v => v.name)
+      .filter(Boolean)
+    return Array.from(new Set(names)) as string[]
+  }, [filters.allVacations])
+
   // Reset programme filter if not available in new cohort
   useMemo(() => {
     if (filterProgramme !== 'Tous' && !availablePrograms.includes(filterProgramme)) {
@@ -211,10 +228,13 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
       
       const matchCohort = filterCohort === 'Tous' || student.cohort === filterCohort
       const matchProgramme = filterProgramme === 'Tous' || student.programmes.includes(filterProgramme)
+      // Comparer vacation par segment exact (split sur ', ') pour éviter les faux positifs
+      const matchVacation = filterVacation === 'Tous' ||
+        student.vacation.split(', ').some(v => v.trim() === filterVacation)
       
-      return matchSearch && matchCohort && matchProgramme
+      return matchSearch && matchCohort && matchProgramme && matchVacation
     })
-  }, [students, search, filterCohort, filterProgramme])
+  }, [students, search, filterCohort, filterProgramme, filterVacation])
 
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage)
   
@@ -381,7 +401,7 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
             onChange={(e) => { setFilterCohort(e.target.value); setCurrentPage(1); }}
             className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
           >
-            <option value="Tous">Toutes les cohortes</option>
+            <option value="Tous">Cohortes</option>
             {formattedCohorts.map(c => (
               <option key={c.id} value={c.name}>{c.name}</option>
             ))}
@@ -395,9 +415,23 @@ export default function EtudiantsIndex({ students: rawStudents, filters }: PageP
             onChange={handleFilter}
             className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
           >
-            <option value="Tous">Tous les programmes</option>
+            <option value="Tous">Programmes</option>
             {availablePrograms.map(progName => (
               <option key={progName} value={progName}>{progName}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="w-full md:w-44 relative">
+          <Filter className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <select
+            value={filterVacation}
+            onChange={(e) => { setFilterVacation(e.target.value); setCurrentPage(1); }}
+            className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer appearance-none"
+          >
+            <option value="Tous">Toutes les vacations</option>
+            {availableVacationNames.map(name => (
+              <option key={name as string} value={name as string}>{name as string}</option>
             ))}
           </select>
         </div>
